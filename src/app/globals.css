@@ -1,1 +1,148 @@
 @import "tailwindcss";
+
+/* ------------------------------------------------------------------
+ * OWN KARMA — Design tokens
+ * ~60% ink · ~30% ivory · ~10% gold. Motion: stillness → movement → stillness.
+ * ------------------------------------------------------------------ */
+@theme inline {
+  --color-ink: #0a0908;
+  --color-ink-2: #141210;
+  --color-ink-3: #1c1a17;
+  --color-ivory: #ede6d3;
+  --color-ivory-dim: rgba(237, 230, 211, 0.65);
+  --color-ivory-mute: rgba(237, 230, 211, 0.4);
+  --color-gold: #c9a24b;
+  --color-gold-hi: #e7c77a;
+  --color-gold-dim: rgba(201, 162, 75, 0.4);
+
+  /* -----------------------------------------------------------------
+   * Tonal drift — cool near-black at the start (§01) → warm amber-ink at
+   * the end (§10). Used across sections to give the scroll narrative a
+   * felt sense of journey per ui-ux-pro-max design intel:
+   *   "Progressive reveal. Each chapter has distinct color. Building intensity."
+   * ----------------------------------------------------------------- */
+  --color-ink-cool: #050508;
+  --color-ink-cool-soft: #070609;
+  --color-ink-warm-soft: #0d0a06;
+  --color-ink-warm: #100b05;
+  --color-ink-warmer: #150e05;
+
+  --font-serif: var(--font-cormorant), "Cormorant Garamond", "Times New Roman", serif;
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+
+  --tracking-brand: 0.22em;
+  --tracking-label: 0.32em;
+
+  --shadow-gold-glow: 0 0 40px -8px rgba(231, 199, 122, 0.55);
+
+  /* -----------------------------------------------------------------
+   * Motion tokens — align with ui-ux-pro-max design intelligence
+   * (150–300ms micro, up to 700ms cinematic reveal).
+   * ----------------------------------------------------------------- */
+  --motion-fast: 180ms;
+  --motion-base: 260ms;
+  --motion-slow: 480ms;
+  --motion-cinematic: 900ms;
+  --ease-standard: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-out-quart: cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+:root {
+  color-scheme: dark;
+  --scroll-behavior: auto;
+  /* Section anchors need a gutter so #the-portal doesn't land under the
+     top-left eyebrow label / any future fixed header. */
+  scroll-padding-top: 4rem;
+}
+
+html,
+body {
+  background-color: var(--color-ink);
+  color: var(--color-ivory);
+}
+
+body {
+  font-family: var(--font-sans);
+  font-feature-settings: "ss01", "cv11";
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  min-height: 100dvh;
+  overflow-x: hidden;
+}
+
+/* Reserve gold as an intentional accent. */
+::selection {
+  background: var(--color-gold);
+  color: var(--color-ink);
+}
+
+/* Focus ring — visible but on-brand. Uses a warm gold rim + soft outer glow so
+   it reads as intentional design rather than a browser default. */
+:focus-visible {
+  outline: 1px solid var(--color-gold);
+  outline-offset: 3px;
+  border-radius: 2px;
+  box-shadow: 0 0 0 4px rgba(201, 162, 75, 0.18);
+  transition: box-shadow var(--motion-fast) var(--ease-standard);
+}
+
+/* Skip-to-content link — visible only when focused via keyboard. A11y (WCAG 2.4.1). */
+.skip-to-content {
+  position: fixed;
+  top: 0.75rem;
+  left: 0.75rem;
+  z-index: 100;
+  padding: 0.55rem 1rem;
+  font-family: var(--font-sans);
+  font-size: 0.72rem;
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  color: var(--color-ink);
+  background-color: var(--color-gold);
+  border-radius: 2px;
+  transform: translateY(-140%);
+  transition: transform var(--motion-base) var(--ease-standard);
+}
+.skip-to-content:focus,
+.skip-to-content:focus-visible {
+  transform: translateY(0);
+  outline: 2px solid var(--color-gold-hi);
+  outline-offset: 2px;
+}
+
+/* Section-number / label eyebrow used across every SectionShell. */
+.section-label {
+  font-family: var(--font-sans);
+  font-size: 0.72rem;
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  color: var(--color-ivory-dim);
+}
+
+/* Utility for scroll-driven ambient particles containers. */
+.mask-radial {
+  -webkit-mask-image: radial-gradient(circle at center, black 55%, transparent 90%);
+  mask-image: radial-gradient(circle at center, black 55%, transparent 90%);
+}
+
+/* Give named section anchors a scroll gutter so hash-jumps + Lenis feel calm. */
+section[id],
+footer[id] {
+  scroll-margin-top: 4rem;
+}
+
+/* Reduced motion — kill background animation, smooth scroll, and Lenis behavior. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  html {
+    scroll-behavior: auto !important;
+  }
+}

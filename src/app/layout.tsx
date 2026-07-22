@@ -1,20 +1,56 @@
-import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import type { Metadata, Viewport } from "next";
+import { Cormorant_Garamond, Inter } from "next/font/google";
 import "./globals.css";
+import { SmoothScrollProvider } from "./(marketing)/_providers/smooth-scroll-provider";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const serif = Cormorant_Garamond({
+  variable: "--font-cormorant",
   subsets: ["latin"],
+  weight: ["300", "400", "500", "600", "700"],
+  display: "swap",
 });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
+const sans = Inter({
+  variable: "--font-inter",
   subsets: ["latin"],
+  display: "swap",
 });
 
 export const metadata: Metadata = {
-  title: "Next.js App",
-  description: "Created with Next.js starter template",
+  title: {
+    default: "OWN KARMA — Not Bound. Unbound.",
+    template: "%s · OWN KARMA",
+  },
+  description:
+    "OWN KARMA is a philosophy expressed through design. Every piece begins with an idea. Every symbol carries meaning. Every design tells a story.",
+  applicationName: "OWN KARMA",
+  keywords: [
+    "OWN KARMA",
+    "unbound",
+    "fashion philosophy",
+    "design universe",
+    "sacred geometry",
+    "karma archive",
+  ],
+  authors: [{ name: "OWN KARMA" }],
+  openGraph: {
+    title: "OWN KARMA — Not Bound. Unbound.",
+    description:
+      "You are not entering a brand. You are entering an idea. Discover the OWN KARMA universe.",
+    type: "website",
+    siteName: "OWN KARMA",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "OWN KARMA — Not Bound. Unbound.",
+    description:
+      "A philosophy expressed through design. Enter the OWN KARMA universe.",
+  },
+};
+
+export const viewport: Viewport = {
+  themeColor: "#0a0908",
+  colorScheme: "dark",
 };
 
 export default function RootLayout({
@@ -25,11 +61,16 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased bg-slate-950 text-slate-100`}
+        className={`${serif.variable} ${sans.variable} bg-ink text-ivory antialiased`}
         suppressHydrationWarning
       >
-        {children}
+        {/* Skip-to-content link — WCAG 2.4.1 keyboard bypass block */}
+        <a href="#the-void" className="skip-to-content">
+          Skip to content
+        </a>
+        <SmoothScrollProvider>{children}</SmoothScrollProvider>
       </body>
     </html>
   );
 }
+

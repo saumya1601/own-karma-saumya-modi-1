@@ -1,3 +1,13 @@
 {
-  "css.lint.unknownAtRules": "ignore"
+  "css.lint.unknownAtRules": "ignore",
+  "chat.tools.terminal.autoApprove": {
+    "/^python --version$/": {
+      "approve": true,
+      "matchCommandLine": true
+    },
+    "/^cd \"c:\\\\Users\\\\saumy\\\\Desktop\\\\Personal Github Projects\\\\own karma\\\\own-karma-saumya-modi-1\"; python \\.github\\\\prompts\\\\ui-ux-pro-max\\\\scripts\\\\search\\.py \"luxury fashion philosophy dark cinematic gold serif storytelling brand narrative\" --design-system -p \"OWN KARMA\" --variance 3 --motion 6 --density 3 -f markdown 2>&1 \\| Select-Object -First 200$/": {
+      "approve": true,
+      "matchCommandLine": true
+    }
+  }
 }
