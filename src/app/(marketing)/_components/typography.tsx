@@ -1,4 +1,4 @@
-import type { ElementType, ReactNode } from "react";
+import React, { type ElementType, type ReactNode } from "react";
 import { cn } from "@/lib/utils/cn";
 
 interface CommonProps {
@@ -10,18 +10,18 @@ interface CommonProps {
 export function EyebrowLabel({
     children,
     className,
-    as: Tag = "p",
+    as = "p",
 }: CommonProps & { as?: ElementType }) {
-    return (
-        <Tag
-            className={cn(
+    return React.createElement(
+        as,
+        {
+            className: cn(
                 "text-[0.72rem] uppercase text-ivory-dim",
                 "[letter-spacing:var(--tracking-label)]",
                 className,
-            )}
-        >
-            {children}
-        </Tag>
+            ),
+        },
+        children,
     );
 }
 
@@ -29,18 +29,18 @@ export function EyebrowLabel({
 export function DisplayHeading({
     children,
     className,
-    as: Tag = "h2",
+    as = "h2",
 }: CommonProps & { as?: ElementType }) {
-    return (
-        <Tag
-            className={cn(
+    return React.createElement(
+        as,
+        {
+            className: cn(
                 "font-serif font-light leading-[0.95] tracking-[-0.01em] text-ivory",
                 "text-5xl sm:text-6xl md:text-7xl lg:text-[7.5rem]",
                 className,
-            )}
-        >
-            {children}
-        </Tag>
+            ),
+        },
+        children,
     );
 }
 
