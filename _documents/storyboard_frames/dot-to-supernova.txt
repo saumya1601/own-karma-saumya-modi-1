@@ -1,0 +1,84 @@
+========================================================================
+OWN KARMA — CINEMATIC COSMIC SEQUENCE
+3 CONTINUOUS SHOTS · 16:9 · WARM GOLD ON PURE BLACK
+Physically accurate · Single-direction spiral · Seamless continuity
+========================================================================
+
+GLOBAL CONTINUITY NOTES (read before generating):
+- The three shots form ONE unbroken story. Each shot ends on the exact
+  state the next shot begins on, so the joins are invisible.
+    SHOT 1 ends on:   warp streaks decelerating toward a radial starburst.
+    SHOT 2 begins on: those same streaks resolving into the starburst.
+    SHOT 2 ends on:   a fully-formed CLOCKWISE gold spiral, dark eye center.
+    SHOT 3 begins on: that same clockwise spiral.
+- The spiral ALWAYS rotates in ONE single direction (clockwise). Never a
+  double spiral, never counter-rotating arms. This is the #1 fix.
+- Palette is locked: pure black background, warm gold only. No cool tones.
+- Camera stays dead-center and stable; motion is smooth and weighty.
+
+
+========================================================================
+SHOT 1 — "IGNITION" (opening ~10s)
+========================================================================
+
+Cinematic cosmic opening shot, 16:9, pure jet-black void (#000000) filling the frame. One unbroken continuous take, no cuts. In the exact center, a single microscopic white-hot pinpoint of light pulses once with a faint horizontal anamorphic lens flare. The camera slowly begins to dolly forward, locked dead-center, toward the point; the pinpoint blooms smoothly into a searing white-gold star. As acceleration builds continuously, thousands of fine gold and white star particles streak radially outward from the center in long motion-blurred trails, warping past the lens in true radial perspective (particles nearest the lens move fastest and blur longest, obeying parallax). Faint smeared amber nebula bands drift slowly and horizontally across the midline. Movement is smooth, weightless, and continuously accelerating into a gentle warp — no cuts, no stutter.
+
+Style: photoreal astrophysical simulation, IMAX cinematography, 35mm anamorphic lens, subtle film grain, deep blacks, high dynamic range, volumetric light, physically based particle motion blur, laminar particle streamlines.
+
+Color palette: pure #000000 background, warm gold spectrum only — deep amber (#3a1e00) → bright gold (#d99a24) → white-hot core (#fff4c2). No blue, no purple, no green, no cyan, no teal.
+
+Camera: locked dead-center, slow push-in continuously accelerating into warp, perfectly stable.
+
+Audio: deep sub-bass rumble rising in pitch, soft ethereal choral pad swelling, faint high-frequency shimmer, no dialogue, no music beat.
+
+Negative prompt: text, letters, logos, watermarks, subtitles, captions, UI, HUD, people, faces, hands, human figures, planets, spaceships, sci-fi ships, aliens, cartoon, anime, low resolution, pixelation, jpeg artifacts, banding, blue tones, purple tones, green tones, cyan, teal, rainbow, neon colors, oversaturation, extreme chromatic aberration, jitter, flicker, strobing, jump cuts, camera shake, handheld wobble, lens dirt, dust spots, watermarked stock footage, generic stars background, tiled repetition, cropping, letterboxing, borders, frames.
+
+
+========================================================================
+SHOT 2 — "FORMATION" (mid ~10s) — single-direction spiral
+========================================================================
+
+Cinematic cosmic mid-sequence shot, 16:9, pure jet-black void (#000000). One unbroken continuous take, no cuts. The camera decelerates as the warp streaks from the previous shot resolve into a dense radial starburst: a bright molten-gold core emitting thousands of ultra-fine, perfectly symmetrical golden filaments radiating straight outward in every direction like a glowing stellar dandelion, hanging perfectly still against black with scattered tiny gold stars around it. Hold on this starburst for a beat.
+
+Then the camera slowly tilts and orbits downward-right. As it orbits, every radial filament bends the SAME way — all sweeping clockwise in unison — curving coherently into trailing spiral arms. The straight rays wrap into ONE rotating golden accretion disk. Critical: all filaments rotate in a single unified clockwise direction only — one vortex, never a double spiral, never opposing swirls, never counter-rotating streams. The structure never breaks apart; it flows as a single connected mass of luminous gas, each filament curving smoothly into an arm of the same spiral. The disk settles into steady continuous clockwise rotation — a spiral galaxy with thick glowing gold arms of gas and dust orbiting a dark elliptical eye at the center, gravity clearly and gently pulling matter inward along smooth curved laminar streamlines (differential rotation: inner arms sweep faster than outer arms, obeying orbital mechanics). Smooth, elegant, weighty motion throughout.
+
+Style: photoreal astrophysical simulation, IMAX cinematography, 35mm anamorphic lens, subtle film grain, deep blacks, volumetric light, physically based fluid and particle simulation, laminar flowing gas, high dynamic range.
+
+Color palette: pure #000000 background, warm gold spectrum only — deep amber (#3a1e00) → bright gold (#d99a24) → white-hot core (#fff4c2). No blue, no purple, no green, no cyan, no teal.
+
+Camera: slow decelerating push-in, brief static hold on the starburst, then smooth single-axis orbital tilt down-right around the vortex. No shake.
+
+Audio: sustained low harmonic drone, gentle metallic chime resonance, soft airy whoosh as the vortex forms, rising anticipatory swell, no dialogue.
+
+Negative prompt: double spiral, twin vortex, counter-rotating arms, opposing swirl directions, two separate spirals, mirror-symmetry swirl, shattering, exploding, breaking apart, fragmenting, particles scattering, disintegration, snapping, text, letters, logos, watermarks, subtitles, captions, UI, HUD, people, faces, hands, human figures, planets, spaceships, sci-fi ships, aliens, cartoon, anime, low resolution, pixelation, jpeg artifacts, banding, blue tones, purple tones, green tones, cyan, teal, rainbow, neon colors, oversaturation, extreme chromatic aberration, jitter, flicker, strobing, jump cuts, camera shake, handheld wobble, lens dirt, dust spots, watermarked stock footage, generic stars background, tiled repetition, cropping, letterboxing, borders, frames, black hole event horizon photo, real NASA imagery, recognizable galaxy photograph.
+
+
+========================================================================
+SHOT 3 — "FINALE / WORDMARK" (closing ~10s)
+========================================================================
+
+Cinematic cosmic finale shot, 16:9, pure jet-black void (#000000). One unbroken continuous take, no cuts. Opening on the fully-formed clockwise gold spiral from the previous shot — thick luminous gold arms rotating steadily clockwise around a dark elliptical central eye, camera locked dead-center.
+
+Beat 1 — collapse (≈0–2s): the rotation accelerates and all spiral arms sweep inward in unison — one single clockwise direction, never counter-rotating — the entire vortex compressing violently toward the dark center, gas streamlines stretching into fine gold threads as they are drawn in. Light concentrates and brightens at the core.
+
+Beat 2 — detonation (≈2–5s): the compressed core detonates in a full-frame supernova. A brilliant white-gold star (#fff4c2) at dead center emits an enormous four-point cross-shaped anamorphic light flare, expanding concentric shockwave rings of gold plasma travelling outward at a physically even radial rate, volumetric amber nebular clouds, and fine glowing debris particles blasting outward past the lens. The explosion peaks in a brief warm white-gold wash.
+
+Beat 3 — cool-down (≈5–7s): the blast peaks, then the light gently settles and cools, blooming into a soft, slowly drifting gold nebula backdrop against deep black.
+
+Beat 4 — wordmark forge (≈7–10s): as the glow calms, the wordmark "Own Karma" forges itself into existence in the exact center of the frame, letters igniting and solidifying from molten liquid gold. Exactly two words, correctly spelled — "Own Karma" — ornate blackletter / gothic serif type, molten liquid-gold metallic surface with inner glow and outer nebula bloom; the letter "O" in "Own" stylized with a crescent / eye motif inside. The wordmark locks perfectly still, subtly shimmering, as the nebula slowly drifts behind it. Final frame: wordmark "Own Karma" centered, glowing, majestic, static.
+
+Style: photoreal astrophysical simulation transitioning to premium luxury brand title card, IMAX cinematography, 35mm anamorphic lens, subtle film grain, deep blacks, volumetric light, physically based particle and fluid simulation, high dynamic range, cinematic title design.
+
+Color palette: pure #000000 background, warm gold spectrum only — deep amber (#3a1e00) → bright gold (#d99a24) → white-hot core (#fff4c2). No blue, no purple, no green, no cyan, no teal.
+
+Camera: locked dead-center throughout, slight slow push-in during the blast, settling to a perfectly static hold on the final wordmark. No shake, no wobble.
+
+Text on screen: only "Own Karma" — exactly two words, exact spelling, ornate gothic blackletter, molten gold, centered, appearing only in the final ~3 seconds.
+
+Audio: low tension riser during the collapse, massive deep impact boom on detonation, expanding shockwave whoosh, sustained warm orchestral swell resolving into a single held choral note, soft metallic shimmer as the title forges, ending in quiet ambient hum, no dialogue.
+
+Negative prompt: double spiral, twin vortex, counter-rotating arms, opposing swirl, misspelled text, garbled letters, extra letters, wrong wordmark, "OWN KHARMA", "OWN CARMA", "OM KARMA", "OWM", single word, three words, multiple logos, duplicate titles, text appearing early, watermarks, subtitles, captions, UI, HUD, people, faces, hands, human figures, planets, spaceships, sci-fi ships, aliens, cartoon, anime, low resolution, pixelation, jpeg artifacts, banding, blue tones, purple tones, green tones, cyan, teal, rainbow, neon colors, oversaturation, extreme chromatic aberration, jitter, flicker, strobing, jump cuts, camera shake, handheld wobble, lens dirt, dust spots, generic sans-serif font, Arial, Helvetica, Times New Roman, comic sans, thin fragile letters, modern minimalist font, tiled repetition, cropping, letterboxing, borders, frames.
+
+========================================================================
+END OF SEQUENCE
+========================================================================
