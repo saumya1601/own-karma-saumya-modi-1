@@ -237,13 +237,30 @@ export function ActCorridor({ onComplete, onBack }: ActCorridorProps) {
       }
     };
 
+    let startY = 0;
+    const handleTouchStart = (e: TouchEvent) => {
+      startY = e.touches[0].clientY;
+    };
+    const handleTouchMove = (e: TouchEvent) => {
+      const currentY = e.touches[0].clientY;
+      const diffY = startY - currentY;
+      if (container.scrollTop <= 0 && diffY < -40 && !transitionFiredRef.current) {
+        transitionFiredRef.current = true;
+        onBack?.();
+      }
+    };
+
     container.addEventListener("scroll", handleScroll, { passive: true });
     window.addEventListener("wheel", handleWheel, { passive: true });
+    container.addEventListener("touchstart", handleTouchStart, { passive: true });
+    container.addEventListener("touchmove", handleTouchMove, { passive: true });
     handleScroll();
 
     return () => {
       container.removeEventListener("scroll", handleScroll);
       window.removeEventListener("wheel", handleWheel);
+      container.removeEventListener("touchstart", handleTouchStart);
+      container.removeEventListener("touchmove", handleTouchMove);
     };
   }, [onComplete, onBack]);
 

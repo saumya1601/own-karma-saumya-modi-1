@@ -81,16 +81,40 @@ export function ActDiscovery({ onComplete, onBack }: ActDiscoveryProps) {
       }
     };
 
+    let startY = 0;
+    const handleTouchStart = (e: TouchEvent) => {
+      startY = e.touches[0].clientY;
+    };
+    const handleTouchMove = (e: TouchEvent) => {
+      const container = containerRef.current;
+      if (!container || transitionFiredRef.current) return;
+      const { scrollTop, clientHeight, scrollHeight } = container;
+      const maxScroll = scrollHeight - clientHeight;
+      const diffY = startY - e.touches[0].clientY;
+
+      if (scrollTop <= 0 && diffY < -40) {
+        transitionFiredRef.current = true;
+        onBack?.();
+      } else if (scrollTop >= maxScroll - 20 && diffY > 40) {
+        transitionFiredRef.current = true;
+        onComplete?.();
+      }
+    };
+
     const container = containerRef.current;
     if (container) {
       container.addEventListener("scroll", handleScroll, { passive: true });
       container.addEventListener("wheel", handleWheel, { passive: true });
+      container.addEventListener("touchstart", handleTouchStart, { passive: true });
+      container.addEventListener("touchmove", handleTouchMove, { passive: true });
     }
 
     return () => {
       if (container) {
         container.removeEventListener("scroll", handleScroll);
         container.removeEventListener("wheel", handleWheel);
+        container.removeEventListener("touchstart", handleTouchStart);
+        container.removeEventListener("touchmove", handleTouchMove);
       }
     };
   }, [onComplete, onBack]);

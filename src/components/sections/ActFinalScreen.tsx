@@ -31,8 +31,28 @@ export function ActFinalScreen({ onBack }: ActFinalScreenProps) {
       }
     };
 
+    let startY = 0;
+    const handleTouchStart = (e: TouchEvent) => {
+      startY = e.touches[0].clientY;
+    };
+    const handleTouchMove = (e: TouchEvent) => {
+      if (transitionFiredRef.current) return;
+      const diffY = startY - e.touches[0].clientY;
+      if (diffY < -40) {
+        transitionFiredRef.current = true;
+        onBack?.();
+      }
+    };
+
     window.addEventListener("wheel", handleWheel, { passive: true });
-    return () => window.removeEventListener("wheel", handleWheel);
+    window.addEventListener("touchstart", handleTouchStart, { passive: true });
+    window.addEventListener("touchmove", handleTouchMove, { passive: true });
+
+    return () => {
+      window.removeEventListener("wheel", handleWheel);
+      window.removeEventListener("touchstart", handleTouchStart);
+      window.removeEventListener("touchmove", handleTouchMove);
+    };
   }, [onBack]);
 
   const handleSubmit = (e: React.FormEvent) => {
