@@ -1,1 +1,78 @@
 @import "tailwindcss";
+
+:root {
+  --ok-black: #000000;
+  --ok-gold: #c9a24b;
+  --ok-gold-hi: #e8c87a;
+  --ok-ivory: #f4f0e8;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  background: var(--ok-black);
+  color: var(--ok-ivory);
+  overflow: hidden;
+  overscroll-behavior: none;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  -ms-overflow-style: none !important;
+  scrollbar-width: none !important;
+}
+
+/* Hide scrollbar completely across Chrome, Safari, Firefox, Edge, and Drei scroll containers */
+::-webkit-scrollbar {
+  display: none !important;
+  width: 0px !important;
+  height: 0px !important;
+  background: transparent !important;
+}
+
+*, *::before, *::after {
+  -ms-overflow-style: none !important;
+  scrollbar-width: none !important;
+}
+
+/* Keep the OS cursor visible during Act I — the particle drifts toward it. */
+html {
+  color-scheme: dark;
+}
+
+/* Global reduced-motion baseline; per-component behavior handled in JS. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Phase transition keyframes */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Subtle breathing pulse for the click hint text */
+@keyframes hintPulse {
+  0%,
+  100% {
+    opacity: 0;
+  }
+  15% {
+    opacity: 0.35;
+  }
+  85% {
+    opacity: 0.35;
+  }
+}
+

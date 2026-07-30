@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Geist, Geist_Mono, Cormorant_Garamond } from "next/font/google";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -12,9 +12,18 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+const cormorant = Cormorant_Garamond({
+  weight: ["300"],
+  style: ["italic"],
+  subsets: ["latin"],
+  variable: "--font-cormorant",
+  display: "block",
+});
+
 export const metadata: Metadata = {
-  title: "Next.js App",
-  description: "Created with Next.js starter template",
+  title: "OWN KARMA",
+  description:
+    "OWN KARMA \u2014 a philosophy expressed through design. Not bound. Unbound.",
 };
 
 export default function RootLayout({
@@ -25,7 +34,7 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased bg-slate-950 text-slate-100`}
+        className={`${geistSans.variable} ${geistMono.variable} ${cormorant.variable} antialiased`}
         suppressHydrationWarning
       >
         {children}
