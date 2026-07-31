@@ -40,6 +40,8 @@ export const BurstParticles = forwardRef<THREE.Points, BurstParticlesProps>(
         const geometry = useMemo(() => {
             const positions = new Float32Array(BURST_COUNT * 3);
             const directions = new Float32Array(BURST_COUNT * 3);
+            const scales = new Float32Array(BURST_COUNT);
+            const rotations = new Float32Array(BURST_COUNT);
 
             for (let i = 0; i < BURST_COUNT; i++) {
                 const u = Math.random();
@@ -51,11 +53,16 @@ export const BurstParticles = forwardRef<THREE.Points, BurstParticlesProps>(
                 directions[i * 3 + 0] = Math.sin(phi) * Math.cos(theta) * speed;
                 directions[i * 3 + 1] = Math.sin(phi) * Math.sin(theta) * speed;
                 directions[i * 3 + 2] = Math.cos(phi) * 0.3 * speed;
+
+                scales[i] = 0.55 + Math.random() * 0.85; // 0.55x .. 1.4x scale variation
+                rotations[i] = Math.random() * Math.PI * 2; // Random 4-corner diamond star orientation
             }
 
             const geo = new THREE.BufferGeometry();
             geo.setAttribute("position", new THREE.BufferAttribute(positions, 3));
             geo.setAttribute("aDirection", new THREE.BufferAttribute(directions, 3));
+            geo.setAttribute("aScale", new THREE.BufferAttribute(scales, 1));
+            geo.setAttribute("aRotation", new THREE.BufferAttribute(rotations, 1));
             return geo;
         }, []);
 

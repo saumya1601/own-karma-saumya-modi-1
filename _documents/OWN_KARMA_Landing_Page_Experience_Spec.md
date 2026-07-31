@@ -35,8 +35,8 @@ OWN KARMA
 - No scrolling indicator.
 - Nothing.
 
-For three seconds...  
-Nothing happens.  
+For three seconds...
+Nothing happens.
 The visitor wonders if the website is broken.
 
 Then...
@@ -46,52 +46,51 @@ Then...
 - Almost alive.
 - It breathes slowly.
 
-The cursor moves.  
-The particle follows the cursor gently, as if it recognizes the visitor.  
-A soft cinematic hum begins. Not music — just atmosphere.  
+The cursor moves.
+The particle follows the cursor gently, as if it recognizes the visitor.
+A soft cinematic hum begins. Not music — just atmosphere.
 
-The visitor clicks.  
-The particle explodes into thousands of microscopic golden stars.  
-Everything disappears.  
+The visitor clicks.
+The particle explodes into thousands of microscopic golden stars.
+Everything disappears.
 Fade to black.
 
 ---
 
 ## ACT II — THE QUESTIONS
 
-Still black.  
-One sentence. Large typography. Centered.
+Still black.One sentence. Large typography. Centered.
 
-> Who are you...  
-*(Fade)*
+> Who are you...
+> *(Fade)*
 
-> When nobody is watching?  
-*(Fade)*
+> When nobody is watching?
+> *(Fade)*
 
 *(Black)*
 
-> What do you wear...  
-*(Fade)*
+> What do you wear...
+> *(Fade)*
 
-> When nobody needs to notice?  
-*(Fade)*
+> When nobody needs to notice?
+> *(Fade)*
 
-> What remains...  
-*(Fade)*
+> What remains...
+> *(Fade)*
 
-> When status disappears?  
-*(Fade)*
+> When status disappears?
+> *(Fade)*
 
-Nothing. Five seconds. Silence.  
-Then... A heartbeat. One beat.  
+Nothing. Five seconds. Silence.
+Then... A heartbeat. One beat.
 The screen opens.
 
 ---
 
 ## ACT III — THE CORRIDOR
 
-Now the visitor begins moving.  
-Not scrolling through a webpage — **walking**.  
+Now the visitor begins moving.
+Not scrolling through a webpage — **walking**.
 The page moves like a camera dolly in a slow cinematic hallway.
 
 Walls are made from floating memories:
@@ -104,49 +103,53 @@ Walls are made from floating memories:
 - Dust
 - Fragments of handwritten philosophy
 
-Everything moves slowly, almost dreamlike.  
+Everything moves slowly, almost dreamlike.
 No products. Only atmosphere.
 
 ---
 
 ## ACT IV — THE DISCOVERY
 
-Instead of an "About" section...  
+Instead of an "About" section...
 The corridor opens into four enormous rooms.
 
 ### ROOM ONE — Silence
 
 - **Visual**: Still black water. One gold ripple.
-- **Text**:  
+- **Text**:
   > *Every creation begins in silence.*
+  >
 
 ### ROOM TWO — Time
 
 - **Visual**: An hourglass. Sand turns into stars.
-- **Text**:  
+- **Text**:
   > *Time never creates character. Choices do.*
+  >
 
 ### ROOM THREE — Purpose
 
 - **Visual**: Cotton fiber. Thread. Fabric. Garment. One continuous transformation.
-- **Text**:  
+- **Text**:
   > *We don't make clothing. We preserve intention.*
+  >
 
 ### ROOM FOUR — Legacy
 
 - **Visual**: The garment slowly dissolves. Only light remains.
-- **Text**:  
+- **Text**:
   > *Everything fades. Meaning remains.*
+  >
 
 ---
 
 ## ACT V — THE REALIZATION
 
-Everything disappears.  
+Everything disappears.
 Darkness.
 
-One golden thread appears.  
-It begins drawing itself.  
+One golden thread appears.
+It begins drawing itself.
 The thread slowly becomes the **OWN KARMA emblem**.
 
 No sound. No dramatic reveal. Only stillness.
@@ -163,7 +166,7 @@ Nothing else.
 
 ## ACT VI — THE PHILOSOPHY
 
-Now the visitor understands.  
+Now the visitor understands.
 Statements. No paragraphs.
 
 ```
@@ -186,60 +189,58 @@ Purpose remains.
 
 Instead of *"Join Newsletter"*, use something unexpected.
 
-The page becomes black again.  
-Thousands of tiny gold particles gather and slowly form one phrase:
+The page becomes black again.Thousands of tiny gold particles gather and slowly form one phrase:
 
-> *You were never looking for clothing.*  
-*(Fade)*
+> *You were never looking for clothing.*
+> *(Fade)*
 
-> *You were looking for people who see the world differently.*  
-*(Fade)*
+> *You were looking for people who see the world differently.*
+> *(Fade)*
 
-Then, in large typography:  
+Then, in large typography:
 **THE KARMA COMMUNITY**
 
-No button. The words themselves are the button.  
+No button. The words themselves are the button.
 
-- **Hover**: The gold particles move.  
+- **Hover**: The gold particles move.
 - **Click**.
 
 ---
 
 ## ACT VIII — OWN YOUR KARMA
 
-A floating glass panel emerges. Minimal. No borders. Only soft light.  
+A floating glass panel emerges. Minimal. No borders. Only soft light.
 Instead of asking only for contact details, make it feel like the first page of a story.
 
 ### WELCOME
->
+
 > *This is where your story begins.*
 
 **Fields:**
 
 - Name
 - Email
-- One word... *"Who are you becoming?"*  
+- One word... *"Who are you becoming?"*
   *(Not "Who are you?" — that sounds like a form. "Who are you becoming?" invites reflection.)*
 
-**Button:**  
-`ENTER`  
+**Button:**
+`ENTER`
 *(Not "Submit", not "Join", not "Sign Up".)*
 
 ---
 
 ## FINAL SCREEN
 
-After they submit...  
+After they submit...
 Don't show *"Thank You"*.
 
 Instead:
-Fade to black.  
-One final sentence appears:
+Fade to black.One final sentence appears:
 
-> *Every choice creates a story.*  
-> *This is yours.*  
+> *Every choice creates a story.*
+> *This is yours.*
 
-**OWN KARMA**  
+**OWN KARMA**
 *(Then fade out)*
 
 ---
