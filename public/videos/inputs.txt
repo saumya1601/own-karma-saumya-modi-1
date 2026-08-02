@@ -1,3 +1,0 @@
-file 'corridor_part1.mp4'
-file 'corridor_part2.mp4'
-file 'corridor_part3.mp4'
