@@ -31,15 +31,14 @@ interface Particle {
 }
 
 /**
- * ACT VII — "The Community" (100% Scroll-Scrubbed Particle Assembly Edition)
+ * ACT VII — "The Community" (Automated Particle Assembly Edition)
  *
- * 5,000 gold particles gather across pitch darkness to form each phrase directly on scroll.
- * ZERO HTML text overlays—the text is created 100% by the gold particles scrubbing on scroll.
+ * 5,000 gold particles automatically gather across pitch darkness to form each phrase over time.
+ * Zero scroll required.
  */
-export function Act07Community({ onComplete, onBack, initialProgress = 0 }: Act07CommunityProps) {
+export function Act07Community({ onComplete }: Act07CommunityProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const scrollContainerRef = useRef<HTMLDivElement>(null);
   const mouseRef = useRef({ x: -1000, y: -1000, active: false });
   const transitionFiredRef = useRef(false);
 
@@ -48,6 +47,33 @@ export function Act07Community({ onComplete, onBack, initialProgress = 0 }: Act0
 
   const [progress, setProgress] = useState<number>(0);
   const [canClick, setCanClick] = useState<boolean>(false);
+  const [overlayOpacity, setOverlayOpacity] = useState<number>(1);
+
+  // Smooth fade-in on mount
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setOverlayOpacity(0);
+    }, 50);
+    return () => clearTimeout(timer);
+  }, []);
+
+  // Automated particle assembly timeline (0 to 1 over 40 seconds for extended reading time)
+  useEffect(() => {
+    const progressObj = { value: 0 };
+    const tween = gsap.to(progressObj, {
+      value: 1,
+      duration: 40,
+      ease: "none",
+      onUpdate: () => {
+        targetProgressRef.current = progressObj.value;
+        setProgress(progressObj.value);
+      },
+    });
+
+    return () => {
+      tween.kill();
+    };
+  }, []);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -153,7 +179,7 @@ export function Act07Community({ onComplete, onBack, initialProgress = 0 }: Act0
     const render = () => {
       ctx.clearRect(0, 0, width, height);
 
-      // Lerp smooth scroll progress
+      // Lerp smooth automated progress
       const diff = targetProgressRef.current - currentProgressRef.current;
       if (Math.abs(diff) > 0.0001) {
         currentProgressRef.current += diff * 0.12;
@@ -174,21 +200,21 @@ export function Act07Community({ onComplete, onBack, initialProgress = 0 }: Act0
         if (p <= 0.08) {
           const t = p / 0.08;
           tPt = interpolatePoint(part.scatter, part.p1, t);
-        } else if (p <= 0.22) {
+        } else if (p <= 0.25) {
           tPt = part.p1;
-        } else if (p <= 0.28) {
-          const t = (p - 0.22) / 0.06;
+        } else if (p <= 0.30) {
+          const t = (p - 0.25) / 0.05;
           tPt = interpolatePoint(part.p1, part.scatter, t);
-        } else if (p <= 0.36) {
-          const t = (p - 0.28) / 0.08;
+        } else if (p <= 0.38) {
+          const t = (p - 0.30) / 0.08;
           tPt = interpolatePoint(part.scatter, part.p2, t);
-        } else if (p <= 0.52) {
+        } else if (p <= 0.58) {
           tPt = part.p2;
-        } else if (p <= 0.60) {
-          const t = (p - 0.52) / 0.08;
+        } else if (p <= 0.63) {
+          const t = (p - 0.58) / 0.05;
           tPt = interpolatePoint(part.p2, part.scatter, t);
         } else if (p <= 0.70) {
-          const t = (p - 0.60) / 0.10;
+          const t = (p - 0.63) / 0.07;
           tPt = interpolatePoint(part.scatter, part.p3, t);
         } else {
           tPt = part.p3;
@@ -197,8 +223,8 @@ export function Act07Community({ onComplete, onBack, initialProgress = 0 }: Act0
         part.targetX = tPt.x;
         part.targetY = tPt.y;
 
-        part.x += (part.targetX - part.x) * 0.14;
-        part.y += (part.targetY - part.y) * 0.14;
+        part.x += (part.targetX - part.x) * 0.08;
+        part.y += (part.targetY - part.y) * 0.08;
 
         if (isMouseActive && p >= 0.7) {
           const dx = part.x - mx;
@@ -233,72 +259,6 @@ export function Act07Community({ onComplete, onBack, initialProgress = 0 }: Act0
     };
   }, []);
 
-  // Scroll listener
-  useEffect(() => {
-    const container = scrollContainerRef.current;
-    if (!container) return;
-
-    if (initialProgress === 1) {
-      requestAnimationFrame(() => {
-        if (!container) return;
-        const maxScroll = container.scrollHeight - container.clientHeight;
-        if (maxScroll > 0) {
-          container.scrollTop = maxScroll;
-          targetProgressRef.current = 1;
-          currentProgressRef.current = 1;
-          setProgress(1);
-        }
-      });
-    }
-
-    const handleScroll = () => {
-      const { scrollTop, scrollHeight, clientHeight } = container;
-      const maxScroll = scrollHeight - clientHeight;
-      if (maxScroll <= 0) return;
-
-      const rawProgress = Math.min(1, Math.max(0, scrollTop / maxScroll));
-      setProgress(rawProgress);
-      targetProgressRef.current = rawProgress;
-
-      if (rawProgress >= 0.985 && !transitionFiredRef.current) {
-        transitionFiredRef.current = true;
-        onComplete?.();
-      }
-    };
-
-    const handleWheel = (e: WheelEvent) => {
-      if (container.scrollTop <= 0 && e.deltaY < -15 && !transitionFiredRef.current) {
-        transitionFiredRef.current = true;
-        onBack?.();
-      }
-    };
-
-    let startY = 0;
-    const handleTouchStart = (e: TouchEvent) => {
-      startY = e.touches[0].clientY;
-    };
-    const handleTouchMove = (e: TouchEvent) => {
-      const diffY = startY - e.touches[0].clientY;
-      if (container.scrollTop <= 0 && diffY < -40 && !transitionFiredRef.current) {
-        transitionFiredRef.current = true;
-        onBack?.();
-      }
-    };
-
-    container.addEventListener("scroll", handleScroll, { passive: true });
-    window.addEventListener("wheel", handleWheel, { passive: true });
-    container.addEventListener("touchstart", handleTouchStart, { passive: true });
-    container.addEventListener("touchmove", handleTouchMove, { passive: true });
-    handleScroll();
-
-    return () => {
-      container.removeEventListener("scroll", handleScroll);
-      window.removeEventListener("wheel", handleWheel);
-      container.removeEventListener("touchstart", handleTouchStart);
-      container.removeEventListener("touchmove", handleTouchMove);
-    };
-  }, [onComplete, onBack]);
-
   const handleMouseMove = (e: React.MouseEvent) => {
     mouseRef.current = {
       x: e.clientX,
@@ -311,25 +271,18 @@ export function Act07Community({ onComplete, onBack, initialProgress = 0 }: Act0
     mouseRef.current.active = false;
   };
 
-  const handleClick = () => {
-    if (!canClick || transitionFiredRef.current) return;
-    transitionFiredRef.current = true;
-
-    gsap.to(containerRef.current, {
-      opacity: 0,
-      scale: 0.98,
-      duration: 0.8,
-      ease: "power2.inOut",
-      onComplete: () => {
-        onComplete?.();
-      },
-    });
-  };
-
-  const handleProceed = () => {
+  const triggerComplete = () => {
     if (transitionFiredRef.current) return;
     transitionFiredRef.current = true;
-    onComplete?.();
+    setOverlayOpacity(1);
+    setTimeout(() => {
+      onComplete?.();
+    }, 800);
+  };
+
+  const handleClick = () => {
+    if (transitionFiredRef.current) return;
+    triggerComplete();
   };
 
   return (
@@ -338,9 +291,7 @@ export function Act07Community({ onComplete, onBack, initialProgress = 0 }: Act0
       onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}
       onClick={handleClick}
-      className={`fixed inset-0 bg-[#000000] select-none ${
-        canClick ? "cursor-pointer" : "cursor-default"
-      }`}
+      className="fixed inset-0 bg-[#000000] select-none cursor-pointer"
       aria-label="Act VII: The Community"
     >
       {/* Sleek Top Gold Progress Bar */}
@@ -351,41 +302,28 @@ export function Act07Community({ onComplete, onBack, initialProgress = 0 }: Act0
         />
       </div>
 
-      {/* Pure Gold Particle Canvas — Zero HTML Overlays */}
+      {/* Pure Gold Particle Canvas */}
       <canvas ref={canvasRef} className="absolute inset-0 w-full h-full pointer-events-none z-10" />
 
-      {/* Scrollable Track Container */}
-      <div
-        ref={scrollContainerRef}
-        className="fixed inset-0 overflow-y-auto z-20 scrollbar-none"
-        style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
-      >
-        <div className="h-[350vh] w-full relative" />
+      {/* Fixed Bottom Action Button */}
+      <div className="fixed bottom-10 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 z-30 pointer-events-none">
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            triggerComplete();
+          }}
+          className="pointer-events-auto px-8 py-3 rounded-full bg-black/70 text-[#C9A55A] font-[var(--font-cormorant)] italic text-lg tracking-[0.3em] uppercase border border-[#C9A55A]/50 transition-all duration-500 hover:border-[#C9A55A] hover:bg-[#C9A55A]/20 hover:shadow-[0_0_25px_rgba(201,165,90,0.4)] cursor-pointer"
+        >
+          Enter The Final Screen →
+        </button>
       </div>
 
-      {/* Fixed Bottom Scroll Indicator / Proceed Action */}
-      <div className="fixed bottom-10 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 z-30 pointer-events-none">
-        {progress < 0.9 ? (
-          <>
-            <span className="text-xs uppercase tracking-[0.3em] text-[#F4F0E8]/60 font-mono animate-pulse">
-              {progress < 0.6 ? "Scroll to assemble community" : "Click or scroll to enter"}
-            </span>
-            <span className="text-[#C9A55A] text-2xl font-light animate-pulse">
-              ↓
-            </span>
-          </>
-        ) : (
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              handleProceed();
-            }}
-            className="pointer-events-auto px-8 py-3 rounded-full bg-black/70 text-[#C9A55A] font-[var(--font-cormorant)] italic text-lg tracking-[0.3em] uppercase border border-[#C9A55A]/50 transition-all duration-500 hover:border-[#C9A55A] hover:bg-[#C9A55A]/20 hover:shadow-[0_0_25px_rgba(201,165,90,0.4)] cursor-pointer"
-          >
-            Enter The Final Screen →
-          </button>
-        )}
-      </div>
+      {/* Smooth Curtain Fade Overlay for Transitions */}
+      <div
+        className="fixed inset-0 bg-black pointer-events-none z-50 transition-opacity duration-1000 ease-out"
+        style={{ opacity: overlayOpacity }}
+      />
     </div>
   );
 }
+
