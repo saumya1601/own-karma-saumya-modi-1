@@ -174,8 +174,8 @@ export function Act01Void({ onComplete }: Act01VoidProps) {
         >
             <Canvas
                 camera={{ fov: 20, position: [0, 0, 15], near: 0.1, far: 100 }}
-                dpr={[1, 2]}
-                gl={{ antialias: true, alpha: false }}
+                dpr={[1, 1.5]}
+                gl={{ antialias: true, alpha: true, powerPreference: "high-performance", failIfMajorPerformanceCaveat: false }}
                 style={{ background: "#000000" }}
             >
                 <GoldParticle
@@ -210,53 +210,6 @@ export function Act01Void({ onComplete }: Act01VoidProps) {
                 >
                     {isCoarsePointer ? "tap anywhere" : "click anywhere"}
                 </p>
-            )}
-
-            {/* Mute icon — fades in at 1s for immediate subconscious load confirmation */}
-            {showUi && (
-                <button
-                    type="button"
-                    data-ok-ui
-                    aria-label={muted ? "Enable sound" : "Mute sound"}
-                    aria-pressed={!muted}
-                    onClick={(e) => {
-                        e.stopPropagation();
-                        setMuted((m) => !m);
-                    }}
-                    className="absolute bottom-6 right-6 z-10 flex h-10 w-10 cursor-pointer items-center justify-center rounded-full text-(--ok-gold) opacity-40 transition-opacity duration-700 hover:opacity-80 focus-visible:opacity-80 focus-visible:outline-none"
-                >
-                    {muted ? (
-                        <svg
-                            viewBox="0 0 24 24"
-                            width="18"
-                            height="18"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth="1.5"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                        >
-                            <path d="M11 5L6 9H2v6h4l5 4z" />
-                            <line x1="22" y1="9" x2="16" y2="15" />
-                            <line x1="16" y1="9" x2="22" y2="15" />
-                        </svg>
-                    ) : (
-                        <svg
-                            viewBox="0 0 24 24"
-                            width="18"
-                            height="18"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth="1.5"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                        >
-                            <path d="M11 5L6 9H2v6h4l5 4z" />
-                            <path d="M15.54 8.46a5 5 0 0 1 0 7.07" />
-                            <path d="M19.07 4.93a10 10 0 0 1 0 14.14" />
-                        </svg>
-                    )}
-                </button>
             )}
         </div>
     );

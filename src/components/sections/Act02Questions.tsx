@@ -64,10 +64,10 @@ export function Act02Questions({ onComplete, onBack }: Act02QuestionsProps) {
   useEffect(() => {
     const handleWheel = (e: WheelEvent) => {
       if (transitionFiredRef.current) return;
-      if (e.deltaY < -15) {
+      if (e.deltaY < -80) {
         transitionFiredRef.current = true;
         onBack?.();
-      } else if (e.deltaY > 15) {
+      } else if (e.deltaY > 80) {
         transitionFiredRef.current = true;
         onComplete?.();
       }
@@ -80,10 +80,10 @@ export function Act02Questions({ onComplete, onBack }: Act02QuestionsProps) {
     const handleTouchMove = (e: TouchEvent) => {
       if (transitionFiredRef.current) return;
       const diffY = startY - e.touches[0].clientY;
-      if (diffY < -40) {
+      if (diffY < -80) {
         transitionFiredRef.current = true;
         onBack?.();
-      } else if (diffY > 40) {
+      } else if (diffY > 80) {
         transitionFiredRef.current = true;
         onComplete?.();
       }
@@ -254,16 +254,12 @@ export function Act02Questions({ onComplete, onBack }: Act02QuestionsProps) {
       <button
         type="button"
         onClick={() => onComplete?.()}
-        aria-hidden="true"
-        tabIndex={-1}
-        className="absolute bottom-8 right-8 z-10 text-xs tracking-[0.2em] uppercase transition-opacity duration-1000"
+        className="absolute top-8 right-8 z-50 px-4 py-1.5 rounded-full bg-black/40 backdrop-blur-md border border-[var(--ok-gold)]/30 text-xs tracking-[0.25em] uppercase transition-all duration-700 cursor-pointer pointer-events-auto hover:border-[var(--ok-gold)] hover:bg-[var(--ok-gold)]/10"
         style={{
           color: "var(--ok-gold)",
-          opacity: showSkip ? 0.4 : 0,
+          opacity: showSkip ? 0.7 : 0,
           fontFamily: "var(--font-cormorant), serif",
         }}
-        onMouseEnter={(e) => (e.currentTarget.style.opacity = "0.8")}
-        onMouseLeave={(e) => (e.currentTarget.style.opacity = showSkip ? "0.4" : "0")}
       >
         Skip
       </button>
