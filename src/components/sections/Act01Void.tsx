@@ -64,13 +64,6 @@ export function Act01Void({ onComplete }: Act01VoidProps) {
         return () => window.clearTimeout(t);
     }, []);
 
-    // Show a subtle "click anywhere" hint if the user hasn't clicked after 8s
-    useEffect(() => {
-        if (!particleVisible || bursting) return;
-        const hintTimer = window.setTimeout(() => setShowHint(true), 8000);
-        return () => window.clearTimeout(hintTimer);
-    }, [particleVisible, bursting]);
-
     const runBurst = useCallback(() => {
         if (bursting) return;
         setBursting(true);
@@ -126,6 +119,17 @@ export function Act01Void({ onComplete }: Act01VoidProps) {
             onComplete?.();
         }, 1.4);
     }, [bursting, onComplete]);
+
+    // Show hint at 5s and automatically burst at 9s if user hasn't clicked
+    useEffect(() => {
+        if (!particleVisible || bursting) return;
+        const hintTimer = window.setTimeout(() => setShowHint(true), 5000);
+        const autoBurstTimer = window.setTimeout(() => runBurst(), 9000);
+        return () => {
+            window.clearTimeout(hintTimer);
+            window.clearTimeout(autoBurstTimer);
+        };
+    }, [particleVisible, bursting, runBurst]);
 
     // Click / tap anywhere (except UI) or scroll down triggers the burst once the particle is visible
     useEffect(() => {

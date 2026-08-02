@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import gsap from "gsap";
 
 export interface Act06PhilosophyProps {
   /** Callback fired when the philosophy statement ritual completes and hands off to Act VII. */
@@ -94,6 +95,34 @@ export function Act06Philosophy({ onComplete, onBack, initialProgress = 0 }: Act
     };
   }, []);
 
+  // Automated progress timeline (0 to 1 over 18s for 6 statements)
+  useEffect(() => {
+    const progressObj = { value: 0 };
+    const tween = gsap.to(progressObj, {
+      value: 1,
+      duration: 18,
+      ease: "none",
+      onUpdate: () => {
+        if (targetProgressRef.current < progressObj.value) {
+          targetProgressRef.current = progressObj.value;
+          setProgress(progressObj.value);
+        }
+      },
+      onComplete: () => {
+        if (!transitionFiredRef.current) {
+          transitionFiredRef.current = true;
+          setTimeout(() => {
+            onComplete?.();
+          }, 800);
+        }
+      },
+    });
+
+    return () => {
+      tween.kill();
+    };
+  }, [onComplete]);
+
   // 2. Scroll listener
   useEffect(() => {
     const container = scrollContainerRef.current;
@@ -174,6 +203,16 @@ export function Act06Philosophy({ onComplete, onBack, initialProgress = 0 }: Act
       className="fixed inset-0 flex flex-col items-center justify-center bg-[#000000] px-6 select-none text-center overflow-hidden"
       aria-label="Act VI: The Philosophy"
     >
+      {/* Top-Left Back Button */}
+      {onBack && (
+        <button
+          type="button"
+          onClick={() => onBack?.()}
+          className="fixed top-6 left-6 z-50 text-xs font-mono uppercase tracking-[0.25em] text-[#C9A55A]/70 hover:text-[#C9A55A] transition-colors cursor-pointer flex items-center gap-2"
+        >
+          ← Back
+        </button>
+      )}
       {/* Sleek Top Gold Progress Bar */}
       <div className="fixed top-0 left-0 right-0 h-1 bg-black/40 z-30 pointer-events-none">
         <div

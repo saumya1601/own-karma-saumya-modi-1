@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import gsap from "gsap";
 
 export interface Act04DiscoveryProps {
   /** Callback fired when visitor completes Room 4 (Legacy) and hands off to Act V. */
@@ -39,17 +40,143 @@ const ROOMS = [
 ];
 
 /**
+ * Animated Room Text Component
+ * Provides luxury motion graphics: staged blur-in entrance, gold hairline expansion,
+ * tracking expansion, and a soft breathing floating effect.
+ */
+function RoomText({ room, isActive }: { room: (typeof ROOMS)[0]; isActive: boolean }) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const titleRef = useRef<HTMLSpanElement>(null);
+  const lineRef = useRef<HTMLDivElement>(null);
+  const quoteRef = useRef<HTMLHeadingElement>(null);
+
+  useEffect(() => {
+    const title = titleRef.current;
+    const line = lineRef.current;
+    const quote = quoteRef.current;
+
+    if (!title || !line || !quote) return;
+
+    if (isActive) {
+      const tl = gsap.timeline({ defaults: { ease: "power3.out" } });
+
+      // Reset initial state for fresh entrance
+      gsap.set(title, { opacity: 0, y: 20, filter: "blur(8px)", letterSpacing: "0.3em" });
+      gsap.set(line, { scaleX: 0, opacity: 0 });
+      gsap.set(quote, { opacity: 0, y: 28, filter: "blur(12px)", scale: 0.97 });
+
+      // 1. Room Title entrance with letter spacing expansion
+      tl.to(title, {
+        opacity: 1,
+        y: 0,
+        filter: "blur(0px)",
+        letterSpacing: "0.45em",
+        duration: 1.0,
+      });
+
+      // 2. Gold Hairline Divider expansion
+      tl.to(line, { scaleX: 1, opacity: 1, duration: 0.8 }, "-=0.6");
+
+      // 3. Philosophical Quote entrance with soft scale & glow bloom
+      tl.to(
+        quote,
+        {
+          opacity: 1,
+          y: 0,
+          filter: "blur(0px)",
+          scale: 1,
+          duration: 1.2,
+        },
+        "-=0.5"
+      );
+
+      // 4. Ambient breathing float
+      tl.to(quote, {
+        y: -5,
+        duration: 3.5,
+        repeat: -1,
+        yoyo: true,
+        ease: "sine.inOut",
+      });
+
+      return () => {
+        tl.kill();
+      };
+    } else {
+      gsap.to([title, line, quote], {
+        opacity: 0,
+        y: -15,
+        filter: "blur(6px)",
+        duration: 0.5,
+        ease: "power2.in",
+      });
+    }
+  }, [isActive]);
+
+  return (
+    <div ref={containerRef} className="relative z-10 space-y-6 max-w-4xl px-4 flex flex-col items-center">
+      {/* Room Title Tag */}
+      <span
+        ref={titleRef}
+        className="inline-block text-xs uppercase tracking-[0.45em] text-[#C9A55A] font-mono filter drop-shadow-[0_0_12px_rgba(201,165,90,0.6)]"
+      >
+        {room.title}
+      </span>
+
+      {/* Gold Accent Hairline Line */}
+      <div
+        ref={lineRef}
+        className="w-28 h-px bg-gradient-to-r from-transparent via-[#C9A55A] to-transparent origin-center opacity-0"
+      />
+
+      {/* Room Philosophical Quote Text */}
+      <h2
+        ref={quoteRef}
+        className="font-[var(--font-cormorant)] italic text-[#F4F0E8] text-4xl sm:text-6xl md:text-7xl font-light tracking-wide filter drop-shadow-[0_0_30px_rgba(201,165,90,0.45)] leading-tight"
+      >
+        &ldquo;{room.text}&rdquo;
+      </h2>
+    </div>
+  );
+}
+
+/**
  * ACT IV — "The Discovery" (4 Enormous Rooms)
  *
- * 4K AI Video background playback engine for the 4 rooms with direct scroll transitions.
+ * 4K AI Video background playback engine for the 4 rooms with direct scroll transitions
+ * and precision motion typography.
  */
 export function Act04Discovery({ onComplete, onBack, initialProgress = 0 }: Act04DiscoveryProps) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const [currentRoomIndex, setCurrentRoomIndex] = useState(0);
+  const roomRefs = useRef<(HTMLElement | null)[]>([]);
   const videoRefs = useRef<(HTMLVideoElement | null)[]>([]);
+  const [currentRoomIndex, setCurrentRoomIndex] = useState(0);
   const transitionFiredRef = useRef(false);
 
-  // Scroll Handler between the 4 rooms
+  // IntersectionObserver to detect active room with high accuracy
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            const index = Number(entry.target.getAttribute("data-room-index"));
+            if (!isNaN(index)) {
+              setCurrentRoomIndex(index);
+            }
+          }
+        });
+      },
+      { threshold: 0.5 }
+    );
+
+    roomRefs.current.forEach((roomEl) => {
+      if (roomEl) observer.observe(roomEl);
+    });
+
+    return () => observer.disconnect();
+  }, []);
+
+  // Scroll & video control handler
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
@@ -68,13 +195,12 @@ export function Act04Discovery({ onComplete, onBack, initialProgress = 0 }: Act0
       if (!containerRef.current) return;
       const { scrollTop, clientHeight } = containerRef.current;
       const roomIdx = Math.min(3, Math.floor((scrollTop + clientHeight / 2) / clientHeight));
-      setCurrentRoomIndex(roomIdx);
 
       // Play current room video and pause others
       videoRefs.current.forEach((v, idx) => {
         if (!v) return;
         if (idx === roomIdx) {
-          if (v.paused) v.play().catch(() => {});
+          if (v.paused) v.play().catch(() => { });
         } else {
           if (!v.paused) v.pause();
         }
@@ -127,7 +253,7 @@ export function Act04Discovery({ onComplete, onBack, initialProgress = 0 }: Act0
         container.removeEventListener("touchmove", handleTouchMove);
       }
     };
-  }, [onComplete, onBack]);
+  }, [onComplete, onBack, initialProgress]);
 
   return (
     <div
@@ -135,41 +261,54 @@ export function Act04Discovery({ onComplete, onBack, initialProgress = 0 }: Act0
       className="fixed inset-0 overflow-y-auto bg-[#000000] select-none snap-y snap-mandatory"
       aria-label="Act IV: The Discovery"
     >
+      {/* Top-Left Back Button */}
+      {onBack && (
+        <button
+          type="button"
+          onClick={() => onBack?.()}
+          className="fixed top-6 left-6 z-50 text-xs font-mono uppercase tracking-[0.25em] text-[#C9A55A]/70 hover:text-[#C9A55A] transition-colors cursor-pointer flex items-center gap-2"
+        >
+          ← Back
+        </button>
+      )}
       {/* 4 Enormous Scrollable Rooms */}
       {ROOMS.map((room, idx) => (
         <section
           key={room.id}
+          data-room-index={idx}
+          ref={(el) => {
+            roomRefs.current[idx] = el;
+          }}
           className="relative z-10 w-full h-screen flex flex-col items-center justify-center px-6 text-center snap-start overflow-hidden"
         >
-          {/* 4K AI Video Background (Cropped to hide bottom-right AI watermark) */}
+          {/* 4K AI Video Background */}
           <video
             ref={(el) => {
               videoRefs.current[idx] = el;
             }}
             src={room.video}
             autoPlay
-            loop
             muted
             playsInline
-            className="absolute inset-0 w-full h-full object-cover z-0 opacity-85 filter brightness-90 contrast-105 transition-opacity duration-1000 scale-[1.08] -translate-y-2"
+            onEnded={() => {
+              if (idx < ROOMS.length - 1) {
+                containerRef.current?.scrollTo({
+                  top: (idx + 1) * window.innerHeight,
+                  behavior: "smooth",
+                });
+              } else if (!transitionFiredRef.current) {
+                transitionFiredRef.current = true;
+                onComplete?.();
+              }
+            }}
+            className="absolute inset-0 w-full h-full object-cover z-0 opacity-85 filter brightness-90 contrast-105 transition-opacity duration-1000"
           />
 
-          {/* Vignette Overlay for Seamless Dark Integration & Bottom-Right Watermark Mask */}
+          {/* Vignette Overlay for Dark Integration */}
           <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-black opacity-80 pointer-events-none z-5" />
-          <div className="absolute bottom-0 right-0 w-64 h-32 bg-gradient-to-tl from-black via-black/90 to-transparent pointer-events-none z-5 blur-sm" />
 
-          {/* Room Content */}
-          <div className="relative z-10 space-y-4 max-w-3xl">
-            {/* Room Title Tag */}
-            <span className="text-xs uppercase tracking-[0.4em] text-[#C9A55A] font-mono filter drop-shadow-[0_0_10px_rgba(201,165,90,0.5)]">
-              {room.title}
-            </span>
-
-            {/* Room Philosophical Text */}
-            <h2 className="font-[var(--font-cormorant)] italic text-[#F4F0E8] text-4xl sm:text-6xl md:text-7xl font-light tracking-wide filter drop-shadow-[0_0_25px_rgba(201,165,90,0.5)]">
-              "{room.text}"
-            </h2>
-          </div>
+          {/* Room Motion Typography Content */}
+          <RoomText room={room} isActive={idx === currentRoomIndex} />
 
           {/* Scroll Down Indicator for Rooms 1-3, and Enter Realization Button for Room 4 */}
           {idx < ROOMS.length - 1 ? (

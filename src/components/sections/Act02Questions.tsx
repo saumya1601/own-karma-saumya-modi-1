@@ -240,6 +240,16 @@ export function Act02Questions({ onComplete, onBack }: Act02QuestionsProps) {
       onPointerLeave={handlePointerUp}
       className="fixed inset-0 select-none bg-(--ok-black) cursor-default"
     >
+      {/* Top-Left Back Button */}
+      {onBack && (
+        <button
+          type="button"
+          onClick={() => onBack?.()}
+          className="fixed top-6 left-6 z-50 text-xs font-mono uppercase tracking-[0.25em] text-[#C9A55A]/70 hover:text-[#C9A55A] transition-colors cursor-pointer flex items-center gap-2"
+        >
+          ← Back
+        </button>
+      )}
       {/* Screen Reader Accessibility Fallback */}
       <div className="sr-only">
         <button type="button" onClick={() => onComplete?.()}>

@@ -252,6 +252,34 @@ export function Act05Realization({ onComplete, onBack, initialProgress = 0 }: Ac
     };
   }, []);
 
+  // Automated progress timer (0 to 1 over 14s with auto transition on finish)
+  useEffect(() => {
+    const progressObj = { value: 0 };
+    const tween = gsap.to(progressObj, {
+      value: 1,
+      duration: 14,
+      ease: "none",
+      onUpdate: () => {
+        if (targetProgressRef.current < progressObj.value) {
+          targetProgressRef.current = progressObj.value;
+          setProgress(progressObj.value);
+        }
+      },
+      onComplete: () => {
+        if (!transitionFiredRef.current) {
+          transitionFiredRef.current = true;
+          setTimeout(() => {
+            onComplete?.();
+          }, 1200);
+        }
+      },
+    });
+
+    return () => {
+      tween.kill();
+    };
+  }, [onComplete]);
+
   // 3. Scroll position listener mapping scroll track to target progress
   useEffect(() => {
     const container = scrollContainerRef.current;
@@ -330,6 +358,16 @@ export function Act05Realization({ onComplete, onBack, initialProgress = 0 }: Ac
       className="fixed inset-0 flex flex-col items-center justify-center bg-[#0A0A0A] select-none overflow-hidden"
       aria-label="Act V: The Realization"
     >
+      {/* Top-Left Back Button */}
+      {onBack && (
+        <button
+          type="button"
+          onClick={() => onBack?.()}
+          className="fixed top-6 left-6 z-50 text-xs font-mono uppercase tracking-[0.25em] text-[#C9A55A]/70 hover:text-[#C9A55A] transition-colors cursor-pointer flex items-center gap-2"
+        >
+          ← Back
+        </button>
+      )}
       {/* Sleek Top Gold Progress Bar */}
       <div className="fixed top-0 left-0 right-0 h-1 bg-black/40 z-30 pointer-events-none">
         <div

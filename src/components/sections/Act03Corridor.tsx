@@ -15,7 +15,7 @@ export interface Act03CorridorProps {
  * ACT III — "The Corridor"
  * Direct Video Playback Engine. Plays the video directly without scroll effects.
  */
-export function Act03Corridor({ onComplete }: Act03CorridorProps) {
+export function Act03Corridor({ onComplete, onBack }: Act03CorridorProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const progressBarRef = useRef<HTMLDivElement>(null);
   const transitionFiredRef = useRef<boolean>(false);
@@ -46,6 +46,60 @@ export function Act03Corridor({ onComplete }: Act03CorridorProps) {
     }, 800);
   };
 
+  const triggerBack = () => {
+    if (transitionFiredRef.current) return;
+    transitionFiredRef.current = true;
+    setOverlayOpacity(1);
+    setTimeout(() => {
+      onBack?.();
+    }, 800);
+  };
+
+  // Listen to wheel, touch swipe, and keyboard navigation for both forward & backward
+  useEffect(() => {
+    const handleWheel = (e: WheelEvent) => {
+      if (e.deltaY < -20 && onBack) {
+        triggerBack();
+      } else if (e.deltaY > 20) {
+        triggerComplete();
+      }
+    };
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.key === "Escape" || e.key === "ArrowUp") && onBack) {
+        triggerBack();
+      } else if (e.key === "ArrowDown" || e.key === "Enter" || e.key === " ") {
+        triggerComplete();
+      }
+    };
+
+    let startY = 0;
+    const handleTouchStart = (e: TouchEvent) => {
+      startY = e.touches[0].clientY;
+    };
+
+    const handleTouchMove = (e: TouchEvent) => {
+      const diffY = startY - e.touches[0].clientY;
+      if (diffY < -40 && onBack) {
+        triggerBack();
+      } else if (diffY > 40) {
+        triggerComplete();
+      }
+    };
+
+    window.addEventListener("wheel", handleWheel, { passive: true });
+    window.addEventListener("keydown", handleKeyDown);
+    window.addEventListener("touchstart", handleTouchStart, { passive: true });
+    window.addEventListener("touchmove", handleTouchMove, { passive: true });
+
+    return () => {
+      window.removeEventListener("wheel", handleWheel);
+      window.removeEventListener("keydown", handleKeyDown);
+      window.removeEventListener("touchstart", handleTouchStart);
+      window.removeEventListener("touchmove", handleTouchMove);
+    };
+  }, [onBack]);
+
   const handleTimeUpdate = () => {
     const video = videoRef.current;
     if (!video || !video.duration) return;
@@ -62,6 +116,19 @@ export function Act03Corridor({ onComplete }: Act03CorridorProps) {
 
   return (
     <div className="fixed inset-0 select-none bg-black overflow-hidden">
+      {/* Top-Left Back Button */}
+      {onBack && (
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            triggerBack();
+          }}
+          className="fixed top-6 left-6 z-40 text-xs font-mono uppercase tracking-[0.25em] text-[#C9A55A]/70 hover:text-[#C9A55A] transition-colors cursor-pointer flex items-center gap-2"
+        >
+          ← Back
+        </button>
+      )}
+
       {/* Direct Fullscreen Video Player */}
       <video
         ref={videoRef}

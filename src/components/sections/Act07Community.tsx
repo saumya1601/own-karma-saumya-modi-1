@@ -36,7 +36,7 @@ interface Particle {
  * 5,000 gold particles automatically gather across pitch darkness to form each phrase over time.
  * Zero scroll required.
  */
-export function Act07Community({ onComplete }: Act07CommunityProps) {
+export function Act07Community({ onComplete, onBack }: Act07CommunityProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const mouseRef = useRef({ x: -1000, y: -1000, active: false });
@@ -57,7 +57,61 @@ export function Act07Community({ onComplete }: Act07CommunityProps) {
     return () => clearTimeout(timer);
   }, []);
 
-  // Automated particle assembly timeline (0 to 1 over 40 seconds for extended reading time)
+  const triggerBack = () => {
+    if (transitionFiredRef.current) return;
+    transitionFiredRef.current = true;
+    setOverlayOpacity(1);
+    setTimeout(() => {
+      onBack?.();
+    }, 800);
+  };
+
+  // Listen to wheel, touch swipe, and keyboard navigation for both forward & backward
+  useEffect(() => {
+    const handleWheel = (e: WheelEvent) => {
+      if (e.deltaY < -20 && onBack) {
+        triggerBack();
+      } else if (e.deltaY > 20) {
+        triggerComplete();
+      }
+    };
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.key === "Escape" || e.key === "ArrowUp") && onBack) {
+        triggerBack();
+      } else if (e.key === "ArrowDown" || e.key === "Enter" || e.key === " ") {
+        triggerComplete();
+      }
+    };
+
+    let startY = 0;
+    const handleTouchStart = (e: TouchEvent) => {
+      startY = e.touches[0].clientY;
+    };
+
+    const handleTouchMove = (e: TouchEvent) => {
+      const diffY = startY - e.touches[0].clientY;
+      if (diffY < -40 && onBack) {
+        triggerBack();
+      } else if (diffY > 40) {
+        triggerComplete();
+      }
+    };
+
+    window.addEventListener("wheel", handleWheel, { passive: true });
+    window.addEventListener("keydown", handleKeyDown);
+    window.addEventListener("touchstart", handleTouchStart, { passive: true });
+    window.addEventListener("touchmove", handleTouchMove, { passive: true });
+
+    return () => {
+      window.removeEventListener("wheel", handleWheel);
+      window.removeEventListener("keydown", handleKeyDown);
+      window.removeEventListener("touchstart", handleTouchStart);
+      window.removeEventListener("touchmove", handleTouchMove);
+    };
+  }, [onBack]);
+
+  // Automated particle assembly timeline (0 to 1 over 40 seconds with auto transition on finish)
   useEffect(() => {
     const progressObj = { value: 0 };
     const tween = gsap.to(progressObj, {
@@ -67,6 +121,11 @@ export function Act07Community({ onComplete }: Act07CommunityProps) {
       onUpdate: () => {
         targetProgressRef.current = progressObj.value;
         setProgress(progressObj.value);
+      },
+      onComplete: () => {
+        if (!transitionFiredRef.current) {
+          triggerComplete();
+        }
       },
     });
 
@@ -294,6 +353,18 @@ export function Act07Community({ onComplete }: Act07CommunityProps) {
       className="fixed inset-0 bg-[#000000] select-none cursor-pointer"
       aria-label="Act VII: The Community"
     >
+      {/* Top-Left Back Button */}
+      {onBack && (
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            triggerBack();
+          }}
+          className="fixed top-6 left-6 z-40 text-xs font-mono uppercase tracking-[0.25em] text-[#C9A55A]/70 hover:text-[#C9A55A] transition-colors cursor-pointer flex items-center gap-2"
+        >
+          ← Back
+        </button>
+      )}
       {/* Sleek Top Gold Progress Bar */}
       <div className="fixed top-0 left-0 right-0 h-1 bg-black/40 z-30 pointer-events-none">
         <div
