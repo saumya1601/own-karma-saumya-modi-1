@@ -344,7 +344,7 @@ export function Act05Realization({ onComplete, onBack, initialProgress = 0 }: Ac
       container.removeEventListener("touchstart", handleTouchStart);
       container.removeEventListener("touchmove", handleTouchMove);
     };
-  }, [onComplete, onBack]);
+  }, [onComplete, onBack, initialProgress]);
 
   const handleProceed = () => {
     if (transitionFiredRef.current) return;
@@ -358,24 +358,6 @@ export function Act05Realization({ onComplete, onBack, initialProgress = 0 }: Ac
       className="fixed inset-0 flex flex-col items-center justify-center bg-[#0A0A0A] select-none overflow-hidden"
       aria-label="Act V: The Realization"
     >
-      {/* Top-Left Back Button */}
-      {onBack && (
-        <button
-          type="button"
-          onClick={() => onBack?.()}
-          className="fixed top-6 left-6 z-50 text-xs font-mono uppercase tracking-[0.25em] text-[#C9A55A]/70 hover:text-[#C9A55A] transition-colors cursor-pointer flex items-center gap-2"
-        >
-          ← Back
-        </button>
-      )}
-      {/* Sleek Top Gold Progress Bar */}
-      <div className="fixed top-0 left-0 right-0 h-1 bg-black/40 z-30 pointer-events-none">
-        <div
-          className="h-full bg-gradient-to-r from-[var(--ok-gold)] via-[#E6CA65] to-[var(--ok-gold)] transition-all duration-75 shadow-[0_0_12px_rgba(201,165,90,0.8)]"
-          style={{ width: `${Math.min(100, Math.max(0, progress * 100))}%` }}
-        />
-      </div>
-
       {/* Background Soft Gold Ambient Aura */}
       <div className="absolute w-[500px] h-[500px] bg-radial from-[#C9A55A]/10 via-transparent to-transparent pointer-events-none filter blur-3xl opacity-60" />
 
@@ -487,26 +469,17 @@ export function Act05Realization({ onComplete, onBack, initialProgress = 0 }: Ac
         <div className="h-[350vh] w-full relative" />
       </div>
 
-      {/* Fixed Bottom Scroll Indicator / Proceed Action */}
-      <div className="fixed bottom-10 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 z-30 pointer-events-none">
-        {progress < 0.9 ? (
-          <>
-            <span className="text-xs uppercase tracking-[0.3em] text-[#F4F0E8]/60 font-mono">
-              Scroll to stitch the emblem
-            </span>
-            <span className="text-[#C9A55A] text-2xl font-light animate-pulse">
-              ↓
-            </span>
-          </>
-        ) : (
+      {/* Fixed Bottom Action Button */}
+      {progress >= 0.9 && (
+        <div className="fixed bottom-10 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 z-30 pointer-events-none">
           <button
             onClick={handleProceed}
             className="pointer-events-auto px-8 py-3 rounded-full bg-black/70 text-[#C9A55A] font-[var(--font-cormorant)] italic text-lg tracking-[0.3em] uppercase border border-[#C9A55A]/50 transition-all duration-500 hover:border-[#C9A55A] hover:bg-[#C9A55A]/20 hover:shadow-[0_0_25px_rgba(201,165,90,0.4)] cursor-pointer"
           >
             Enter The Philosophy →
           </button>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   );
 }

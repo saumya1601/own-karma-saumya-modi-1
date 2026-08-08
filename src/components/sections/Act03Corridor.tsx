@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 export interface Act03CorridorProps {
   /** Callback fired once the visitor advances to the next act. */
@@ -54,23 +54,23 @@ export function Act03Corridor({ onComplete, onBack, initialProgress = 0 }: Act03
     return () => clearTimeout(timer);
   }, [initialProgress]);
 
-  const triggerComplete = () => {
+  const triggerComplete = useCallback(() => {
     if (transitionFiredRef.current) return;
     transitionFiredRef.current = true;
     setOverlayOpacity(1);
     setTimeout(() => {
       onComplete?.();
     }, 800);
-  };
+  }, [onComplete]);
 
-  const triggerBack = () => {
+  const triggerBack = useCallback(() => {
     if (transitionFiredRef.current) return;
     transitionFiredRef.current = true;
     setOverlayOpacity(1);
     setTimeout(() => {
       onBack?.();
     }, 800);
-  };
+  }, [onBack]);
 
   // Listen to wheel, touch swipe, and keyboard navigation for both forward & backward
   useEffect(() => {
@@ -115,7 +115,7 @@ export function Act03Corridor({ onComplete, onBack, initialProgress = 0 }: Act03
       window.removeEventListener("touchstart", handleTouchStart);
       window.removeEventListener("touchmove", handleTouchMove);
     };
-  }, [onBack]);
+  }, [onBack, triggerBack, triggerComplete]);
 
   const handleTimeUpdate = () => {
     const video = videoRef.current;
@@ -133,19 +133,6 @@ export function Act03Corridor({ onComplete, onBack, initialProgress = 0 }: Act03
 
   return (
     <div className="fixed inset-0 select-none bg-black overflow-hidden">
-      {/* Top-Left Back Button */}
-      {onBack && (
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            triggerBack();
-          }}
-          className="fixed top-6 left-6 z-40 text-xs font-mono uppercase tracking-[0.25em] text-[#C9A55A]/70 hover:text-[#C9A55A] transition-colors cursor-pointer flex items-center gap-2"
-        >
-          ← Back
-        </button>
-      )}
-
       {/* Direct Fullscreen Video Player */}
       <video
         ref={videoRef}
@@ -160,25 +147,6 @@ export function Act03Corridor({ onComplete, onBack, initialProgress = 0 }: Act03
 
       {/* Dark Luxury Vignette Gradient Overlay */}
       <div className="fixed inset-0 bg-radial from-transparent via-black/20 to-black/80 pointer-events-none z-10" />
-
-      {/* Sleek Top Gold Progress Bar */}
-      <div className="fixed top-0 left-0 right-0 h-1 bg-black/40 z-30 pointer-events-none overflow-hidden">
-        <div
-          ref={progressBarRef}
-          className="h-full w-full bg-gradient-to-r from-[var(--ok-gold)] via-[#E6CA65] to-[var(--ok-gold)] shadow-[0_0_12px_rgba(201,165,90,0.8)] origin-left transition-transform duration-100 ease-linear"
-          style={{ transform: "scaleX(0)", willChange: "transform" }}
-        />
-      </div>
-
-      {/* Fixed Bottom Action Button */}
-      <div className="fixed bottom-10 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 z-30 pointer-events-none">
-        <button
-          onClick={() => triggerComplete()}
-          className="pointer-events-auto px-8 py-3 rounded-full bg-black/70 text-[#C9A55A] font-[var(--font-cormorant)] italic text-lg tracking-[0.3em] uppercase border border-[#C9A55A]/50 transition-all duration-500 hover:border-[#C9A55A] hover:bg-[#C9A55A]/20 hover:shadow-[0_0_25px_rgba(201,165,90,0.4)] cursor-pointer"
-        >
-          Enter The Discovery →
-        </button>
-      </div>
 
       {/* Smooth Curtain Fade Overlay for Transitions */}
       <div

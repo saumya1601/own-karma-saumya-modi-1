@@ -1,284 +1,302 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
 import gsap from "gsap";
+import { useEffect, useLayoutEffect, useRef } from "react";
+import { usePreferences } from "@/lib/usePreferences";
 
 export interface Act06PhilosophyProps {
-  /** Callback fired when the philosophy statement ritual completes and hands off to Act VII. */
   onComplete?: () => void;
-  /** Callback fired when visitor scrolls backward. */
   onBack?: () => void;
-  /** Initial progress (0 for top, 1 for bottom when entering backward). */
   initialProgress?: number;
 }
 
-const STATEMENTS = [
-  { noun: "LUXURY", sub: "is temporary." },
-  { noun: "MEANING", sub: "is timeless." },
-  { noun: "STATUS", sub: "belongs to others." },
-  { noun: "CHARACTER", sub: "belongs to you." },
-  { noun: "FASHION", sub: "changes." },
-  { noun: "PURPOSE", sub: "remains." },
+const STATEMENTS: { subject: string; predicate: string }[] = [
+  { subject: "LUXURY", predicate: "is temporary." },
+  { subject: "MEANING", predicate: "is timeless." },
+  { subject: "STATUS", predicate: "belongs to others." },
+  { subject: "CHARACTER", predicate: "belongs to you." },
+  { subject: "FASHION", predicate: "changes." },
+  { subject: "PURPOSE", predicate: "remains." },
+];
+
+const TIMING = {
+  charFadeDuration: 0.55,
+  charStagger: 0.06,
+  hairlineDuration: 0.7,
+  predicateDuration: 0.7,
+  holdSeconds: 1.4,
+  fadeOutDuration: 0.9,
+  gapBetween: 0.7,
+  reducedMotion: {
+    holdSeconds: 2.5,
+    fadeOutDuration: 0.6,
+    gapBetween: 0.5,
+  },
+} as const;
+
+const STARS: { top: string; left: string; size: number; duration: number; delay: number }[] = [
+  { top: "9%", left: "14%", size: 1.4, duration: 4.5, delay: 0.0 },
+  { top: "14%", left: "78%", size: 1.0, duration: 6.0, delay: 1.8 },
+  { top: "20%", left: "36%", size: 1.6, duration: 5.2, delay: 2.5 },
+  { top: "26%", left: "88%", size: 1.2, duration: 4.8, delay: 3.4 },
+  { top: "34%", left: "8%", size: 1.0, duration: 6.5, delay: 1.2 },
+  { top: "42%", left: "72%", size: 1.4, duration: 5.8, delay: 0.7 },
+  { top: "56%", left: "22%", size: 1.2, duration: 6.8, delay: 4.2 },
+  { top: "62%", left: "82%", size: 1.5, duration: 5.6, delay: 3.1 },
+  { top: "72%", left: "10%", size: 1.0, duration: 7.2, delay: 4.6 },
+  { top: "78%", left: "56%", size: 1.4, duration: 5.5, delay: 2.0 },
+  { top: "84%", left: "90%", size: 0.9, duration: 6.4, delay: 1.5 },
+  { top: "88%", left: "34%", size: 1.2, duration: 6.0, delay: 3.7 },
 ];
 
 /**
- * ACT VI — "The Philosophy" (100% Scroll-Scrubbed Statement Engine)
+ * ACT VI — "The Philosophy"
  *
- * Minimalist fading presentation showcasing all 6 philosophy statements sequentially
- * tied directly to user scroll progress with zero clutter and 60fps blur dissolves.
+ * Six statements, one at a time, on black. Editorial two-line composition:
+ * monumental uppercase subject → gold hairline expansion → italic predicate.
+ * "Statements. No paragraphs." — spec.
+ *
+ * See _documents/OWN_KARMA_Landing_Page_Experience_Spec.md — ACT VI.
  */
-export function Act06Philosophy({ onComplete, onBack, initialProgress = 0 }: Act06PhilosophyProps) {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const scrollContainerRef = useRef<HTMLDivElement>(null);
-  const transitionFiredRef = useRef(false);
+export function Act06Philosophy({ onComplete }: Act06PhilosophyProps) {
+  const { prefersReducedMotion } = usePreferences();
+  const groupRefs = useRef<(HTMLDivElement | null)[]>([]);
+  const subjectCharRefs = useRef<(HTMLSpanElement | null)[][]>(
+    STATEMENTS.map((s) =>
+      new Array<HTMLSpanElement | null>(Array.from(s.subject).length).fill(null)
+    )
+  );
+  const hairlineRefs = useRef<(HTMLDivElement | null)[]>([]);
+  const predicateRefs = useRef<(HTMLParagraphElement | null)[]>([]);
+  const onCompleteRef = useRef(onComplete);
 
-  const targetProgressRef = useRef<number>(0);
-  const currentProgressRef = useRef<number>(0);
-
-  const [progress, setProgress] = useState<number>(0);
-  const [statementIndex, setStatementIndex] = useState<number>(0);
-  const [statementStyle, setStatementStyle] = useState({
-    opacity: 0,
-    y: 20,
-    blur: 12,
-  });
-
-  // 1. 60fps Render Loop mapping scroll progress to statement index & opacity/blur fade
   useEffect(() => {
-    let active = true;
-    let animFrame: number;
-
-    const renderLoop = () => {
-      if (!active) return;
-
-      const diff = targetProgressRef.current - currentProgressRef.current;
-      if (Math.abs(diff) > 0.0001) {
-        currentProgressRef.current += diff * 0.12;
-      } else {
-        currentProgressRef.current = targetProgressRef.current;
-      }
-
-      const p = Math.min(0.999, Math.max(0, currentProgressRef.current));
-      const totalSlots = STATEMENTS.length;
-      const rawSlot = p * totalSlots;
-      const idx = Math.min(totalSlots - 1, Math.floor(rawSlot));
-      const localP = rawSlot - idx; // 0.0 to 1.0 within current statement slot
-
-      setStatementIndex(idx);
-
-      // Compute fade in, hold, and fade out within current statement slot
-      let opacity = 1;
-      let y = 0;
-      let blur = 0;
-
-      if (localP < 0.25) {
-        const factor = localP / 0.25;
-        opacity = factor;
-        y = (1 - factor) * 20;
-        blur = (1 - factor) * 12;
-      } else if (localP > 0.75) {
-        const factor = (localP - 0.75) / 0.25;
-        opacity = 1 - factor;
-        y = -factor * 20;
-        blur = factor * 12;
-      }
-
-      setStatementStyle({ opacity, y, blur });
-
-      animFrame = requestAnimationFrame(renderLoop);
-    };
-
-    animFrame = requestAnimationFrame(renderLoop);
-    return () => {
-      active = false;
-      cancelAnimationFrame(animFrame);
-    };
-  }, []);
-
-  // Automated progress timeline (0 to 1 over 18s for 6 statements)
-  useEffect(() => {
-    const progressObj = { value: 0 };
-    const tween = gsap.to(progressObj, {
-      value: 1,
-      duration: 18,
-      ease: "none",
-      onUpdate: () => {
-        if (targetProgressRef.current < progressObj.value) {
-          targetProgressRef.current = progressObj.value;
-          setProgress(progressObj.value);
-        }
-      },
-      onComplete: () => {
-        if (!transitionFiredRef.current) {
-          transitionFiredRef.current = true;
-          setTimeout(() => {
-            onComplete?.();
-          }, 800);
-        }
-      },
-    });
-
-    return () => {
-      tween.kill();
-    };
+    onCompleteRef.current = onComplete;
   }, [onComplete]);
 
-  // 2. Scroll listener
-  useEffect(() => {
-    const container = scrollContainerRef.current;
-    if (!container) return;
+  useLayoutEffect(() => {
+    const tl = gsap.timeline({
+      onComplete: () => onCompleteRef.current?.(),
+    });
 
-    if (initialProgress === 1) {
-      requestAnimationFrame(() => {
-        if (!container) return;
-        const maxScroll = container.scrollHeight - container.clientHeight;
-        if (maxScroll > 0) {
-          container.scrollTop = maxScroll;
-          targetProgressRef.current = 1;
-          currentProgressRef.current = 1;
-          setProgress(1);
-        }
-      });
-    }
+    let cursor = 0;
 
-    const handleScroll = () => {
-      const { scrollTop, scrollHeight, clientHeight } = container;
-      const maxScroll = scrollHeight - clientHeight;
-      if (maxScroll <= 0) return;
+    STATEMENTS.forEach((_stmt, i) => {
+      const group = groupRefs.current[i];
+      const chars = subjectCharRefs.current[i].filter(
+        (c): c is HTMLSpanElement => c !== null
+      );
+      const hairline = hairlineRefs.current[i];
+      const predicate = predicateRefs.current[i];
+      if (!group || !hairline || !predicate || chars.length === 0) return;
 
-      const rawProgress = Math.min(1, Math.max(0, scrollTop / maxScroll));
-      setProgress(rawProgress);
-      targetProgressRef.current = rawProgress;
+      if (prefersReducedMotion) {
+        tl.set(group, { opacity: 1 }, cursor);
+        tl.set(chars, { opacity: 1, y: 0 }, cursor);
+        tl.set(hairline, { scaleX: 1, opacity: 1 }, cursor);
+        tl.set(predicate, { opacity: 0.9, y: 0 }, cursor);
+        cursor += TIMING.reducedMotion.holdSeconds;
+        tl.to(
+          group,
+          {
+            opacity: 0,
+            duration: TIMING.reducedMotion.fadeOutDuration,
+            ease: "power2.in",
+          },
+          cursor
+        );
+        cursor += TIMING.reducedMotion.fadeOutDuration;
+      } else {
+        tl.set(group, { opacity: 1 }, cursor);
+        tl.set(chars, { opacity: 0, y: 14 }, cursor);
+        tl.set(hairline, { scaleX: 0, opacity: 1 }, cursor);
+        tl.set(predicate, { opacity: 0, y: 12 }, cursor);
 
-      if (rawProgress >= 0.985 && !transitionFiredRef.current) {
-        transitionFiredRef.current = true;
-        onComplete?.();
+        // 1. Subject reveal — letter by letter.
+        chars.forEach((char, ci) => {
+          tl.to(
+            char,
+            {
+              opacity: 1,
+              y: 0,
+              duration: TIMING.charFadeDuration,
+              ease: "power2.out",
+            },
+            cursor + ci * TIMING.charStagger
+          );
+        });
+        cursor += (chars.length - 1) * TIMING.charStagger + TIMING.charFadeDuration;
+
+        // 2. Gold hairline expands from center — the "moment".
+        tl.to(
+          hairline,
+          {
+            scaleX: 1,
+            duration: TIMING.hairlineDuration,
+            ease: "power3.inOut",
+          },
+          cursor
+        );
+        cursor += TIMING.hairlineDuration;
+
+        // 3. Predicate rises into place.
+        tl.to(
+          predicate,
+          {
+            opacity: 0.9,
+            y: 0,
+            duration: TIMING.predicateDuration,
+            ease: "power2.out",
+          },
+          cursor
+        );
+        cursor += TIMING.predicateDuration;
+
+        // 4. Hold — whole composition breathes gently.
+        tl.to(
+          group,
+          {
+            scale: 1.015,
+            duration: TIMING.holdSeconds / 2,
+            ease: "sine.inOut",
+            yoyo: true,
+            repeat: 1,
+          },
+          cursor
+        );
+        cursor += TIMING.holdSeconds;
+
+        // 5. Dissolve the whole composition together.
+        tl.to(
+          group,
+          {
+            opacity: 0,
+            duration: TIMING.fadeOutDuration,
+            ease: "power2.inOut",
+          },
+          cursor
+        );
+        cursor += TIMING.fadeOutDuration;
       }
-    };
 
-    const handleWheel = (e: WheelEvent) => {
-      if (container.scrollTop <= 0 && e.deltaY < -15 && !transitionFiredRef.current) {
-        transitionFiredRef.current = true;
-        onBack?.();
+      if (i < STATEMENTS.length - 1) {
+        cursor += prefersReducedMotion
+          ? TIMING.reducedMotion.gapBetween
+          : TIMING.gapBetween;
       }
-    };
+    });
 
-    let startY = 0;
-    const handleTouchStart = (e: TouchEvent) => {
-      startY = e.touches[0].clientY;
-    };
-    const handleTouchMove = (e: TouchEvent) => {
-      const diffY = startY - e.touches[0].clientY;
-      if (container.scrollTop <= 0 && diffY < -40 && !transitionFiredRef.current) {
-        transitionFiredRef.current = true;
-        onBack?.();
-      }
-    };
-
-    container.addEventListener("scroll", handleScroll, { passive: true });
-    window.addEventListener("wheel", handleWheel, { passive: true });
-    container.addEventListener("touchstart", handleTouchStart, { passive: true });
-    container.addEventListener("touchmove", handleTouchMove, { passive: true });
-    handleScroll();
+    tl.to({}, { duration: 0.001 }, cursor);
 
     return () => {
-      container.removeEventListener("scroll", handleScroll);
-      window.removeEventListener("wheel", handleWheel);
-      container.removeEventListener("touchstart", handleTouchStart);
-      container.removeEventListener("touchmove", handleTouchMove);
+      tl.kill();
     };
-  }, [onComplete, onBack]);
-
-  const handleProceed = () => {
-    if (transitionFiredRef.current) return;
-    transitionFiredRef.current = true;
-    onComplete?.();
-  };
-
-  const current = STATEMENTS[statementIndex];
+  }, [prefersReducedMotion]);
 
   return (
-    <div
-      ref={containerRef}
-      className="fixed inset-0 flex flex-col items-center justify-center bg-[#000000] px-6 select-none text-center overflow-hidden"
-      aria-label="Act VI: The Philosophy"
-    >
-      {/* Top-Left Back Button */}
-      {onBack && (
-        <button
-          type="button"
-          onClick={() => onBack?.()}
-          className="fixed top-6 left-6 z-50 text-xs font-mono uppercase tracking-[0.25em] text-[#C9A55A]/70 hover:text-[#C9A55A] transition-colors cursor-pointer flex items-center gap-2"
-        >
-          ← Back
-        </button>
-      )}
-      {/* Sleek Top Gold Progress Bar */}
-      <div className="fixed top-0 left-0 right-0 h-1 bg-black/40 z-30 pointer-events-none">
-        <div
-          className="h-full bg-gradient-to-r from-[var(--ok-gold)] via-[#E6CA65] to-[var(--ok-gold)] transition-all duration-75 shadow-[0_0_12px_rgba(201,165,90,0.8)]"
-          style={{ width: `${Math.min(100, Math.max(0, progress * 100))}%` }}
-        />
+    <div className="fixed inset-0 flex items-center justify-center bg-(--ok-black) px-6 select-none overflow-hidden">
+      {/* Ambient constellation drifting far behind the composition */}
+      <div className="absolute inset-0 pointer-events-none opacity-40">
+        {STARS.map((star, i) => (
+          <span
+            key={i}
+            className="absolute rounded-full bg-[#F4F0E8] shadow-[0_0_4px_1px_rgba(232,200,122,0.35)]"
+            style={{
+              top: star.top,
+              left: star.left,
+              width: `${star.size}px`,
+              height: `${star.size}px`,
+              animationName: "starTwinkle",
+              animationDuration: `${star.duration}s`,
+              animationDelay: `${star.delay}s`,
+              animationIterationCount: "infinite",
+              animationTimingFunction: "ease-in-out",
+            }}
+          />
+        ))}
       </div>
 
-      {/* Statement Container (Centered in Pitch Darkness) */}
-      <div
-        className="max-w-4xl space-y-3 pointer-events-none z-10 transition-transform duration-75 ease-out"
-        style={{
-          opacity: statementStyle.opacity,
-          transform: `translateY(${statementStyle.y}px)`,
-          filter: `blur(${statementStyle.blur}px)`,
-        }}
-      >
-        {/* Noun (Gold Serif Capitals) */}
-        <h2 className="font-[var(--font-cormorant)] text-[#C9A55A] text-5xl sm:text-7xl md:text-8xl tracking-[0.35em] uppercase font-light drop-shadow-[0_0_20px_rgba(201,165,90,0.45)]">
-          {current.noun}
-        </h2>
+      {/* Soft breathing gold aura */}
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[80vw] h-[80vw] max-w-260 max-h-260 rounded-full bg-radial from-(--ok-gold)/15 via-(--ok-gold)/4 to-transparent pointer-events-none filter blur-3xl animate-[auraBreathe_6s_ease-in-out_infinite]" />
 
-        {/* Sub-Statement (Ivory Italic Serif) */}
-        <p className="font-[var(--font-cormorant)] italic text-[#F4F0E8]/90 text-3xl sm:text-5xl md:text-6xl tracking-wide font-light">
-          {current.sub}
+      {/* Screen reader fallback */}
+      <div className="sr-only">
+        <p>
+          Luxury is temporary. Meaning is timeless. Status belongs to others.
+          Character belongs to you. Fashion changes. Purpose remains.
         </p>
       </div>
 
-      {/* Scrollable Track Container */}
       <div
-        ref={scrollContainerRef}
-        className="fixed inset-0 overflow-y-auto z-20 scrollbar-none"
-        style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+        className="relative z-10 w-full flex items-center justify-center"
+        aria-hidden="true"
       >
-        <div className="h-[450vh] w-full relative" />
-      </div>
-
-      {/* Fixed Bottom Scroll Indicator / Proceed Action */}
-      <div className="fixed bottom-10 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 z-30 pointer-events-none">
-        {progress < 0.9 ? (
-          <>
-            <span className="text-xs uppercase tracking-[0.3em] text-[#F4F0E8]/60 font-mono">
-              Scroll through the philosophy
-            </span>
-            <span className="text-[#C9A55A] text-2xl font-light animate-pulse">
-              ↓
-            </span>
-          </>
-        ) : (
-          <button
-            onClick={handleProceed}
-            className="pointer-events-auto px-8 py-3 rounded-full bg-black/70 text-[#C9A55A] font-[var(--font-cormorant)] italic text-lg tracking-[0.3em] uppercase border border-[#C9A55A]/50 transition-all duration-500 hover:border-[#C9A55A] hover:bg-[#C9A55A]/20 hover:shadow-[0_0_25px_rgba(201,165,90,0.4)] cursor-pointer"
+        {STATEMENTS.map((stmt, qIndex) => (
+          <div
+            key={`${qIndex}-${stmt.subject}`}
+            ref={(el) => {
+              groupRefs.current[qIndex] = el;
+            }}
+            className="absolute flex flex-col items-center gap-6 opacity-0"
+            style={{ willChange: "transform, opacity" }}
           >
-            Enter The Community →
-          </button>
-        )}
-      </div>
+            {/* Subject — monumental uppercase, wide tracking */}
+            <h2
+              className="whitespace-nowrap uppercase font-light"
+              style={{
+                fontFamily: "var(--font-cormorant), serif",
+                fontSize: "clamp(2.8rem, 7vw, 6rem)",
+                letterSpacing: "0.28em",
+                color: "var(--ok-ivory)",
+                lineHeight: 1.05,
+                paddingLeft: "0.28em",
+              }}
+            >
+              {Array.from(stmt.subject).map((char, cIndex) => (
+                <span
+                  key={cIndex}
+                  ref={(el) => {
+                    subjectCharRefs.current[qIndex][cIndex] = el;
+                  }}
+                  className="inline-block"
+                  style={{ opacity: 0 }}
+                >
+                  {char}
+                </span>
+              ))}
+            </h2>
 
-      {/* Accessibility Fallback */}
-      <div className="sr-only">
-        {STATEMENTS.map((item, i) => (
-          <p key={i}>
-            {item.noun} {item.sub}
-          </p>
+            {/* Gold hairline — expands from center as the moment lands */}
+            <div
+              ref={(el) => {
+                hairlineRefs.current[qIndex] = el;
+              }}
+              className="h-px w-40 bg-linear-to-r from-transparent via-[#C9A55A] to-transparent shadow-[0_0_10px_rgba(201,165,90,0.5)]"
+              style={{ transformOrigin: "center", transform: "scaleX(0)" }}
+            />
+
+            {/* Predicate — italic, slightly smaller, contemplative */}
+            <p
+              ref={(el) => {
+                predicateRefs.current[qIndex] = el;
+              }}
+              className="italic font-light whitespace-nowrap"
+              style={{
+                fontFamily: "var(--font-cormorant), serif",
+                fontSize: "clamp(1.4rem, 3.2vw, 2.6rem)",
+                color: "var(--ok-ivory)",
+                letterSpacing: "0.02em",
+                opacity: 0,
+              }}
+            >
+              {stmt.predicate}
+            </p>
+          </div>
         ))}
       </div>
     </div>
   );
 }
+
+
+

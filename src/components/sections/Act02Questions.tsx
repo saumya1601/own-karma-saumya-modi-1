@@ -1,11 +1,13 @@
 "use client";
 
 import gsap from "gsap";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef } from "react";
 import { usePreferences } from "@/lib/usePreferences";
+import { audioEngine } from "@/utils/audioEngine";
 
 export interface Act02QuestionsProps {
   onComplete?: () => void;
+  /** Reserved for parent-driven navigation — spec has no back UI inside Act II. */
   onBack?: () => void;
 }
 
@@ -18,314 +20,231 @@ const QUESTIONS = [
   "When status disappears?",
 ];
 
-// Centralized pacing config — tweak here instead of hunting through the timeline chain.
 const TIMING = {
-  fadeInDuration: 1.4,
+  charFadeDuration: 0.7,
+  charStagger: 0.12,
   fadeOutDuration: 1.2,
-  gapBetweenLines: 0.8,
-  gapAfterPair: 1.4,
-  // Hold duration scales with text length so short lines don't linger
-  // and long lines aren't rushed. Tune the multiplier/floor to taste.
-  holdMinSeconds: 2.2,
-  holdPerCharSeconds: 0.045,
-  blackSilenceDuration: 1.2,
-  heartbeatInDuration: 0.4,
-  heartbeatOutDuration: 0.6,
+  gapBetweenLines: 0.9,
+  gapAfterPair: 1.5,
+  holdSeconds: 1.6,
+  blackSilenceDuration: 5.0,
+  heartbeatInDuration: 0.35,
+  heartbeatOutDuration: 1.4,
   finalSilenceDuration: 0.6,
   reducedMotion: {
-    fadeInDuration: 1.0,
     holdDuration: 2.5,
     fadeOutDuration: 1.0,
   },
-  skipButtonRevealDelay: 2000, // ms before the visible skip affordance fades in
 } as const;
-
-function getHoldDuration(text: string) {
-  return Math.max(TIMING.holdMinSeconds, text.length * TIMING.holdPerCharSeconds);
-}
 
 /**
  * ACT II — "The Questions"
  *
- * Razor-sharp high-contrast serif typography:
- * Still black -> One sentence -> Large typography -> Centered
+ * Still black. One sentence at a time, revealed letter-by-letter in a large
+ * ivory serif. After the six lines fade, five seconds of silence, then a
+ * single heartbeat, then the screen "opens" into Act III.
  *
- * See _documents/implementation_plans/act-ii-canonical-spec.md
+ * Spec: _documents/OWN_KARMA_Landing_Page_Experience_Spec.md — ACT II.
  */
-export function Act02Questions({ onComplete, onBack }: Act02QuestionsProps) {
+export function Act02Questions({ onComplete }: Act02QuestionsProps) {
   const { prefersReducedMotion } = usePreferences();
+  const rootRef = useRef<HTMLDivElement>(null);
   const textRefs = useRef<(HTMLParagraphElement | null)[]>([]);
-  const glowRefs = useRef<(HTMLSpanElement | null)[]>([]);
+  const charRefs = useRef<(HTMLSpanElement | null)[][]>(
+    QUESTIONS.map((text) =>
+      new Array<HTMLSpanElement | null>(Array.from(text).length).fill(null)
+    )
+  );
   const heartbeatRef = useRef<HTMLDivElement>(null);
-  const timelineRef = useRef<gsap.core.Timeline | null>(null);
-  const [showSkip, setShowSkip] = useState(false);
-  const transitionFiredRef = useRef(false);
+  const onCompleteRef = useRef(onComplete);
 
+  // Keep onComplete's identity stable so the timeline effect doesn't rebuild
+  // when the parent re-renders and passes a new inline callback.
   useEffect(() => {
-    const handleWheel = (e: WheelEvent) => {
-      if (transitionFiredRef.current) return;
-      if (e.deltaY < -80) {
-        transitionFiredRef.current = true;
-        onBack?.();
-      } else if (e.deltaY > 80) {
-        transitionFiredRef.current = true;
-        onComplete?.();
-      }
-    };
+    onCompleteRef.current = onComplete;
+  }, [onComplete]);
 
-    let startY = 0;
-    const handleTouchStart = (e: TouchEvent) => {
-      startY = e.touches[0].clientY;
-    };
-    const handleTouchMove = (e: TouchEvent) => {
-      if (transitionFiredRef.current) return;
-      const diffY = startY - e.touches[0].clientY;
-      if (diffY < -80) {
-        transitionFiredRef.current = true;
-        onBack?.();
-      } else if (diffY > 80) {
-        transitionFiredRef.current = true;
-        onComplete?.();
-      }
-    };
+  // useLayoutEffect guarantees every ref (parent <p> and each <span>) is
+  // populated before we build the timeline — useEffect can fire on a paint
+  // where refs are still being wired up in dev.
+  useLayoutEffect(() => {
+    const ctx = gsap.context(() => {
+      const tl = gsap.timeline({
+        onComplete: () => onCompleteRef.current?.(),
+      });
 
-    window.addEventListener("wheel", handleWheel, { passive: true });
-    window.addEventListener("touchstart", handleTouchStart, { passive: true });
-    window.addEventListener("touchmove", handleTouchMove, { passive: true });
+      // Explicit cursor — every tween is placed at a known absolute position.
+      // No reliance on GSAP's implicit "end of previous" resolution, which was
+      // silently collapsing stagger onto sentences 2–6.
+      let cursor = 0;
 
-    return () => {
-      window.removeEventListener("wheel", handleWheel);
-      window.removeEventListener("touchstart", handleTouchStart);
-      window.removeEventListener("touchmove", handleTouchMove);
-    };
-  }, [onComplete, onBack]);
+      const animateSentence = (index: number, isPairEnd: boolean, isLast: boolean) => {
+        const el = textRefs.current[index];
+        if (!el) return;
 
-  useEffect(() => {
-    const elRefs = textRefs.current;
-    const glows = glowRefs.current;
-    const heartbeat = heartbeatRef.current;
+        const chars = charRefs.current[index].filter(
+          (c): c is HTMLSpanElement => c !== null
+        );
+        if (chars.length === 0) return;
 
-    // Master cinematic timeline
-    const tl = gsap.timeline({
-      onComplete: () => {
-        onComplete?.();
-      },
-    });
-    timelineRef.current = tl;
+        if (prefersReducedMotion) {
+          tl.set(el, { opacity: 1 }, cursor)
+            .set(chars, { opacity: 1, y: 0 }, cursor);
+          cursor += TIMING.reducedMotion.holdDuration;
+          tl.to(
+            el,
+            { opacity: 0, duration: TIMING.reducedMotion.fadeOutDuration },
+            cursor
+          );
+          cursor += TIMING.reducedMotion.fadeOutDuration;
+        } else {
+          // 1. Reveal the parent paragraph (chars still hidden by their own
+          //    inline opacity: 0).
+          tl.set(el, { opacity: 1 }, cursor);
 
-    // Helper for pure razor-sharp sentence fade-in, hold, and fade-out
-    const animateSentence = (index: number, isPairEnd: boolean) => {
-      const el = elRefs[index];
-      const glow = glows[index];
-      if (!el) return;
+          // 2. Fire ONE callback that flips each letter's inline opacity/y.
+          //    Each <span> carries its own `transition-delay` (baked into the
+          //    JSX per-letter), so the browser natively cascades the reveal
+          //    even though we mutate all letters in the same JS frame.
+          tl.call(
+            () => {
+              for (const char of chars) {
+                char.style.opacity = "1";
+                char.style.transform = "translateY(0)";
+              }
+            },
+            [],
+            cursor
+          );
 
-      const holdDuration = getHoldDuration(QUESTIONS[index]);
+          // 3. Advance cursor past the last letter's transition end.
+          cursor += (chars.length - 1) * TIMING.charStagger + TIMING.charFadeDuration;
 
-      if (prefersReducedMotion) {
-        tl.to(el, { opacity: 1, duration: TIMING.reducedMotion.fadeInDuration })
-          .to(el, { opacity: 1, duration: TIMING.reducedMotion.holdDuration })
-          .to(el, { opacity: 0, duration: TIMING.reducedMotion.fadeOutDuration });
-        return;
-      }
+          // 4. Post-reveal hold beat.
+          cursor += TIMING.holdSeconds;
 
-      // 1. Crystal-clear razor-sharp fade-in (opacity 0 -> 1, y 16px -> 0px)
-      //    Glow blooms in parallel so the gold light feels alive, not static.
-      tl.fromTo(
-        el,
-        { opacity: 0, y: 16 },
-        {
-          opacity: 1,
-          y: 0,
-          duration: TIMING.fadeInDuration,
-          ease: "power2.out",
+          // 5. Whole line dissolves together (parent opacity).
+          tl.to(
+            el,
+            {
+              opacity: 0,
+              duration: TIMING.fadeOutDuration,
+              ease: "power2.inOut",
+            },
+            cursor
+          );
+          cursor += TIMING.fadeOutDuration;
         }
-      );
-      if (glow) {
-        tl.fromTo(
-          glow,
-          { opacity: 0.35 },
-          { opacity: 1, duration: TIMING.fadeInDuration, ease: "power2.out" },
-          "<" // play alongside the text fade-in
-        );
-      }
 
-      // 2. Stillness hold beat — scaled to text length
-      tl.to(el, { duration: holdDuration });
+        if (!isLast) {
+          cursor += isPairEnd ? TIMING.gapAfterPair : TIMING.gapBetweenLines;
+        }
+      };
 
-      // 3. Smooth dissolve fade-out into black (opacity 1 -> 0, y 0px -> -10px)
-      //    Glow dims in sync.
-      tl.to(el, {
-        opacity: 0,
-        y: -10,
-        duration: TIMING.fadeOutDuration,
-        ease: "power2.inOut",
-      });
-      if (glow) {
+      animateSentence(0, false, false);
+      animateSentence(1, true, false);
+      animateSentence(2, false, false);
+      animateSentence(3, true, false);
+      animateSentence(4, false, false);
+      animateSentence(5, true, true);
+
+      // Nothing. Five seconds. Silence.
+      cursor += TIMING.blackSilenceDuration;
+
+      // A heartbeat. One beat.
+      const heartbeat = heartbeatRef.current;
+      if (!prefersReducedMotion && heartbeat) {
+        tl.call(() => audioEngine.triggerHeartbeat(), [], cursor);
         tl.to(
-          glow,
-          { opacity: 0.35, duration: TIMING.fadeOutDuration, ease: "power2.inOut" },
-          "<"
+          heartbeat,
+          {
+            opacity: 1.0,
+            scale: 1.2,
+            duration: TIMING.heartbeatInDuration,
+            ease: "power3.out",
+          },
+          cursor
         );
+        cursor += TIMING.heartbeatInDuration;
+        tl.to(
+          heartbeat,
+          {
+            opacity: 0,
+            scale: 2.0,
+            duration: TIMING.heartbeatOutDuration,
+            ease: "power2.inOut",
+          },
+          cursor
+        );
+        cursor += TIMING.heartbeatOutDuration;
+      } else if (prefersReducedMotion) {
+        tl.call(() => audioEngine.triggerHeartbeat(), [], cursor);
       }
 
-      // 4. Black pause between lines
-      tl.to({}, { duration: isPairEnd ? TIMING.gapAfterPair : TIMING.gapBetweenLines });
-    };
+      // Brief still moment before the parent hands off to Act III.
+      cursor += TIMING.finalSilenceDuration;
+      // Anchor the timeline's end so onComplete fires at `cursor`.
+      tl.to({}, { duration: 0.001 }, cursor);
+    }, rootRef);
 
-    // --- Sequence Execution ---
-    // Question 1: Who are you... / When nobody is watching?
-    animateSentence(0, false);
-    animateSentence(1, true);
-
-    // Question 2: What do you wear... / When nobody needs to notice?
-    animateSentence(2, false);
-    animateSentence(3, true);
-
-    // Question 3: What remains... / When status disappears?
-    animateSentence(4, false);
-    animateSentence(5, true);
-
-    // Five seconds of pure black silence
-    tl.to({}, { duration: TIMING.blackSilenceDuration });
-
-    // A single golden heartbeat pulse
-    if (!prefersReducedMotion && heartbeat) {
-      tl.to(heartbeat, {
-        opacity: 0.85,
-        scale: 1.08,
-        duration: TIMING.heartbeatInDuration,
-        ease: "power2.out",
-      }).to(heartbeat, {
-        opacity: 0,
-        scale: 1.0,
-        duration: TIMING.heartbeatOutDuration,
-        ease: "power2.in",
-      });
-    }
-
-    // Silence before screen opens into Act III
-    tl.to({}, { duration: TIMING.finalSilenceDuration });
-
-    return () => {
-      tl.kill();
-      gsap.globalTimeline.timeScale(1.0);
-    };
-  }, [onComplete, prefersReducedMotion]);
-
-  // Fade in a visible skip affordance after a short delay, so impatient
-  // sighted users have an option beyond discovering press-and-hold.
-  useEffect(() => {
-    const timeout = setTimeout(() => setShowSkip(true), TIMING.skipButtonRevealDelay);
-    return () => clearTimeout(timeout);
-  }, []);
-
-  // Press-and-hold fast-forward
-  const handlePointerDown = () => {
-    if (timelineRef.current) {
-      timelineRef.current.timeScale(4.0);
-    }
-  };
-
-  const handlePointerUp = () => {
-    if (timelineRef.current) {
-      timelineRef.current.timeScale(1.0);
-    }
-  };
+    return () => ctx.revert();
+  }, [prefersReducedMotion]);
 
   return (
-    <div
-      onPointerDown={handlePointerDown}
-      onPointerUp={handlePointerUp}
-      onPointerCancel={handlePointerUp}
-      onPointerLeave={handlePointerUp}
-      className="fixed inset-0 select-none bg-(--ok-black) cursor-default"
-    >
-      {/* Top-Left Back Button */}
-      {onBack && (
-        <button
-          type="button"
-          onClick={() => onBack?.()}
-          className="fixed top-6 left-6 z-50 text-xs font-mono uppercase tracking-[0.25em] text-[#C9A55A]/70 hover:text-[#C9A55A] transition-colors cursor-pointer flex items-center gap-2"
-        >
-          ← Back
-        </button>
-      )}
+    <div ref={rootRef} className="fixed inset-0 select-none bg-(--ok-black) cursor-default">
       {/* Screen Reader Accessibility Fallback */}
       <div className="sr-only">
-        <button type="button" onClick={() => onComplete?.()}>
-          Skip intro questions
-        </button>
         <p>
           Who are you when nobody is watching? What do you wear when nobody needs to notice? What remains when status disappears?
         </p>
       </div>
 
-      {/* Visible skip affordance — understated, fades in after a short delay */}
-      <button
-        type="button"
-        onClick={() => onComplete?.()}
-        className="absolute top-8 right-8 z-50 px-4 py-1.5 rounded-full bg-black/40 backdrop-blur-md border border-[var(--ok-gold)]/30 text-xs tracking-[0.25em] uppercase transition-all duration-700 cursor-pointer pointer-events-auto hover:border-[var(--ok-gold)] hover:bg-[var(--ok-gold)]/10"
-        style={{
-          color: "var(--ok-gold)",
-          opacity: showSkip ? 0.7 : 0,
-          fontFamily: "var(--font-cormorant), serif",
-        }}
-      >
-        Skip
-      </button>
-
-      {/* Visual Canvas Container */}
       <div className="relative h-full w-full" aria-hidden="true">
-        {/* Heartbeat radial gold pulse */}
+        {/* Heartbeat radial gold pulse — the single beat + "the screen opens" */}
         <div
           ref={heartbeatRef}
           className="pointer-events-none absolute inset-0 flex items-center justify-center opacity-0"
         >
-          <div className="w-[50vw] h-[50vw] max-w-[600px] max-h-[600px] rounded-full bg-radial from-(--ok-gold)/20 via-(--ok-gold)/5 to-transparent blur-2xl" />
+          <div className="w-[60vw] h-[60vw] max-w-180 max-h-180 rounded-full bg-radial from-(--ok-gold)/25 via-(--ok-gold)/6 to-transparent blur-2xl" />
         </div>
 
-        {/* Centered Large Razor-Sharp Typography Container */}
+        {/* Centered, uniform-weight typography for all six questions */}
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none px-6">
-          {QUESTIONS.map((text, index) => {
-            // Odd indices are the "twist" line in each question pair —
-            // slightly larger and non-italic so the pairing reads as
-            // call-and-response rather than six identical beats.
-            const isTwistLine = index % 2 === 1;
-
-            return (
-              <p
-                key={`${index}-${text}`}
-                ref={(el) => {
-                  textRefs.current[index] = el;
-                }}
-                className={`absolute max-w-none text-center tracking-wide opacity-0 whitespace-nowrap ${isTwistLine ? "not-italic" : "italic"
-                  }`}
-                style={{
-                  fontFamily: "var(--font-cormorant), serif",
-                  fontSize: isTwistLine
-                    ? "clamp(2.3rem, 5.8vw, 5.1rem)"
-                    : "clamp(2.2rem, 5.5vw, 4.8rem)",
-                  fontWeight: isTwistLine ? 600 : 400,
-                  color: "var(--ok-gold)",
-                  lineHeight: 1.25,
-                  willChange: "transform, opacity",
-                }}
-              >
+          {QUESTIONS.map((text, qIndex) => (
+            <p
+              key={`${qIndex}-${text}`}
+              ref={(el) => {
+                textRefs.current[qIndex] = el;
+              }}
+              className="absolute max-w-none text-center tracking-wide opacity-0 whitespace-nowrap italic"
+              style={{
+                fontFamily: "var(--font-cormorant), serif",
+                fontSize: "clamp(2.2rem, 5.5vw, 4.8rem)",
+                fontWeight: 400,
+                color: "var(--ok-ivory)",
+                lineHeight: 1.25,
+                willChange: "transform, opacity",
+              }}
+            >
+              {Array.from(text).map((char, cIndex) => (
                 <span
+                  key={cIndex}
                   ref={(el) => {
-                    glowRefs.current[index] = el;
+                    charRefs.current[qIndex][cIndex] = el;
                   }}
+                  className="inline-block"
                   style={{
-                    display: "inline-block",
-                    filter: "drop-shadow(0 0 20px rgba(201,165,90,0.35))",
-                    opacity: 0.8,
+                    opacity: 0,
+                    transform: "translateY(14px)",
+                    transition: `opacity ${TIMING.charFadeDuration}s ease-out, transform ${TIMING.charFadeDuration}s ease-out`,
+                    transitionDelay: `${cIndex * TIMING.charStagger}s`,
                   }}
                 >
-                  {text}
+                  {char === " " ? "\u00A0" : char}
                 </span>
-              </p>
-            );
-          })}
+              ))}
+            </p>
+          ))}
         </div>
       </div>
     </div>

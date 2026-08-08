@@ -30,7 +30,6 @@ export function useScrollProgress(enabled: boolean = true): ScrollProgressResult
 
         targetRef.current = 0;
         currentRef.current = 0;
-        setProgress(0);
 
         // Lock body scrolling so virtual scroll takes over cleanly
         const prevOverflow = document.body.style.overflow;

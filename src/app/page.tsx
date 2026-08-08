@@ -40,6 +40,38 @@ export default function Home() {
   const overlayRef = useRef<HTMLDivElement>(null);
   const lockedRef = useRef(false);
 
+  // Read ?act=... deep-link AFTER hydration so server and client HTML match.
+  // The overlay starts opaque and fades out once the correct phase is set,
+  // hiding the brief pre-navigation frame.
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const act = params.get("act");
+    const targetPhase: Phase =
+      act === "8" || act === "final" ? "final" :
+        act === "7" || act === "community" ? "community" :
+          act === "6" || act === "philosophy" ? "philosophy" :
+            act === "5" || act === "realization" ? "realization" :
+              act === "4" || act === "discovery" ? "discovery" :
+                act === "3" || act === "corridor" ? "corridor" :
+                  act === "2" || act === "questions" ? "questions" :
+                    "void";
+
+    if (targetPhase !== "void") {
+      setPhase(targetPhase);
+    }
+
+    // Give React one frame to mount the target Act, then fade the curtain.
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        const overlay = overlayRef.current;
+        if (overlay) {
+          overlay.style.transition = `opacity ${OVERLAY_FADE_MS}ms ease-out`;
+          overlay.style.opacity = "0";
+        }
+      });
+    });
+  }, []);
+
   const navigate = (nextPhase: Phase, dir: "forward" | "backward") => {
     if (lockedRef.current) return;
     lockedRef.current = true;
@@ -72,47 +104,24 @@ export default function Home() {
   const goToNext = (nextPhase: Phase) => navigate(nextPhase, "forward");
   const goToPrev = (prevPhase: Phase) => navigate(prevPhase, "backward");
 
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      const params = new URLSearchParams(window.location.search);
-      const act = params.get("act");
-      if (act === "8" || act === "final") {
-        setPhase("final");
-      } else if (act === "7" || act === "community") {
-        setPhase("community");
-      } else if (act === "6" || act === "philosophy") {
-        setPhase("philosophy");
-      } else if (act === "5" || act === "realization") {
-        setPhase("realization");
-      } else if (act === "4" || act === "discovery") {
-        setPhase("discovery");
-      } else if (act === "3" || act === "corridor") {
-        setPhase("corridor");
-      } else if (act === "2" || act === "questions") {
-        setPhase("questions");
-      } else if (act === "1" || act === "void") {
-        setPhase("void");
-      }
-    }
-  }, []);
-
   const isBackward = direction === "backward";
   const initialProgress = isBackward ? 1 : 0;
 
   return (
     <main className="fixed inset-0 bg-[#000000]">
-      {/* Cross-act transition curtain — guarantees every phase change fades
-          through black uniformly, regardless of whether the individual Act
-          has its own exit animation. */}
+      {/* Cross-act transition curtain — starts opaque so the brief moment
+          before ?act=... phase detection is hidden. Also guarantees every
+          subsequent phase change fades through black uniformly. */}
       <div
         ref={overlayRef}
         className="pointer-events-none fixed inset-0 z-[200] bg-black"
-        style={{ opacity: 0 }}
+        style={{ opacity: 1 }}
         aria-hidden
       />
 
-      {/* Floating Sound Toggle */}
-      <AudioToggle />
+      {/* Floating Sound Toggle — hidden during Act I to preserve the spec's
+          "Pure black. No logo. No menu. No navigation. Nothing." */}
+      {phase !== "void" && <AudioToggle />}
 
       {/* ACT I: The Void -> Transitions into Act II: The Questions */}
       {phase === "void" && (

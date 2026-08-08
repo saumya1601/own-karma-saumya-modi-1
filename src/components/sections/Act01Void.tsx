@@ -7,6 +7,7 @@ import * as THREE from "three";
 import { BurstParticles } from "@/components/3d/BurstParticles";
 import { GoldParticle } from "@/components/3d/GoldParticle";
 import { usePreferences } from "@/lib/usePreferences";
+import { audioEngine } from "@/utils/audioEngine";
 
 export interface Act01VoidProps {
     /** Called once the fade-to-black at the end of the burst has completed. */
@@ -15,24 +16,21 @@ export interface Act01VoidProps {
 
 const INITIAL_BLACK_MS = 3000; // "For three seconds... nothing happens."
 const FADE_IN_S = 1.5;
-const REASSURANCE_UI_MS = 1000; // Microscopic UI cue at 1s reassures user the app is loaded
 
 /**
  * ACT I — "The Void"
  *
- * Pure black → gold particle fades in → breathes and drifts toward cursor
- * → click bursts it into thousands of stars → fade to black → onComplete.
+ * Pure black → gold particle fades in → breathes slowly and drifts toward
+ * cursor → click bursts it into thousands of microscopic golden stars →
+ * fade to black → onComplete.
  *
- * See _documents/implementation_plans/act-i-canonical-spec.md
+ * See _documents/OWN_KARMA_Landing_Page_Experience_Spec.md — ACT I.
  */
 export function Act01Void({ onComplete }: Act01VoidProps) {
-    const { isCoarsePointer, prefersReducedMotion } = usePreferences();
+    const { prefersReducedMotion } = usePreferences();
 
     const [particleVisible, setParticleVisible] = useState(false);
     const [bursting, setBursting] = useState(false);
-    const [showHint, setShowHint] = useState(false);
-    const [showUi, setShowUi] = useState(false);
-    const [muted, setMuted] = useState(true);
 
     const meshRef = useRef<THREE.Mesh>(null);
     const particleMaterialRef = useRef<THREE.ShaderMaterial>(null);
@@ -42,10 +40,10 @@ export function Act01Void({ onComplete }: Act01VoidProps) {
 
     const followEnabled = !bursting;
 
-    // Reassure user at 1.0s that UI is live before 3.0s particle reveal
+    // Prime the ambient hum graph on mount — will only actually make sound
+    // after the first user gesture (browser autoplay policy).
     useEffect(() => {
-        const uiTimer = window.setTimeout(() => setShowUi(true), REASSURANCE_UI_MS);
-        return () => window.clearTimeout(uiTimer);
+        audioEngine.init();
     }, []);
 
     // Fade the particle in after the initial black beat
@@ -67,7 +65,11 @@ export function Act01Void({ onComplete }: Act01VoidProps) {
     const runBurst = useCallback(() => {
         if (bursting) return;
         setBursting(true);
-        setShowHint(false);
+
+        // First user gesture — unmute the ambient hum so it carries into Act II.
+        if (audioEngine.getMutedState()) {
+            audioEngine.toggle();
+        }
 
         const particleMat = particleMaterialRef.current;
         const burstMat = burstMaterialRef.current;
@@ -83,92 +85,46 @@ export function Act01Void({ onComplete }: Act01VoidProps) {
         burstPoints.position.copy(particleMesh.position);
         burstPoints.visible = true;
 
-        const tl = gsap.timeline({
-            onComplete: () => {
-                onComplete?.();
-            },
-        });
+        const tl = gsap.timeline();
 
-        // 1. Graceful slow-motion expansion of the central star
+        // 1. Micro-flash — the particle brightens and swells for a heartbeat
         tl.to(particleMesh.scale, {
-            x: 2.2,
-            y: 2.2,
-            z: 2.2,
-            duration: 1.2,
-            ease: "power2.out",
+            x: 2.0, y: 2.0, z: 2.0,
+            duration: 0.25,
+            ease: "power3.out",
         });
-        // 2. Silky-smooth dissolve of the main particle as sparks float outward
+        // 2. The central star dissolves as the shatter begins
         tl.to(
             particleMat.uniforms.uOpacity,
-            { value: 0, duration: 1.8, ease: "power1.inOut" },
-            "<0.2",
+            { value: 0, duration: 0.6, ease: "power2.out" },
+            "<0.1",
         );
-        // 3. Cinematic slow-motion blast trajectory
+        // 3. Thousands of microscopic golden stars drift outward in slow motion.
+        //    `sine.out` keeps velocity even instead of front-loading the motion,
+        //    which is what made the previous power2.out timing feel rushed.
         tl.to(
             burstMat.uniforms.uProgress,
-            { value: 1, duration: 3.0, ease: "power2.out" },
+            { value: 1, duration: 3.0, ease: "sine.out" },
             "<",
         );
-        // 4. Quick fade to black early at 1.0s and hand off to Act II at 1.4s
+        // 4. Everything disappears — fade to black (starts once the explosion
+        //    has been visibly witnessed for ~1.7s).
         tl.to(
             overlay,
-            { opacity: 1, duration: 0.5, ease: "power2.inOut" },
-            1.0,
+            { opacity: 1, duration: 1.4, ease: "power2.inOut" },
+            1.8,
         );
-        tl.add(() => {
-            onComplete?.();
-        }, 1.4);
+        // 5. Hand off to Act II the instant the screen is fully black
+        tl.add(() => onComplete?.(), 3.2);
     }, [bursting, onComplete]);
 
-    // Show hint at 5s and automatically burst at 9s if user hasn't clicked
-    useEffect(() => {
-        if (!particleVisible || bursting) return;
-        const hintTimer = window.setTimeout(() => setShowHint(true), 5000);
-        const autoBurstTimer = window.setTimeout(() => runBurst(), 9000);
-        return () => {
-            window.clearTimeout(hintTimer);
-            window.clearTimeout(autoBurstTimer);
-        };
-    }, [particleVisible, bursting, runBurst]);
-
-    // Click / tap anywhere (except UI) or scroll down triggers the burst once the particle is visible
+    // Click / tap anywhere triggers the burst — spec: "The visitor clicks."
     useEffect(() => {
         if (!particleVisible || bursting) return;
 
-        const handler = (e: MouseEvent) => {
-            const target = e.target as HTMLElement | null;
-            if (target?.closest("[data-ok-ui]")) return;
-            runBurst();
-        };
-
-        const handleWheel = (e: WheelEvent) => {
-            if (e.deltaY > 20) {
-                runBurst();
-            }
-        };
-
-        let startY = 0;
-        const handleTouchStart = (e: TouchEvent) => {
-            startY = e.touches[0].clientY;
-        };
-        const handleTouchEnd = (e: TouchEvent) => {
-            const deltaY = startY - e.changedTouches[0].clientY;
-            if (deltaY > 40) {
-                runBurst();
-            }
-        };
-
+        const handler = () => runBurst();
         window.addEventListener("click", handler);
-        window.addEventListener("wheel", handleWheel, { passive: true });
-        window.addEventListener("touchstart", handleTouchStart, { passive: true });
-        window.addEventListener("touchend", handleTouchEnd, { passive: true });
-
-        return () => {
-            window.removeEventListener("click", handler);
-            window.removeEventListener("wheel", handleWheel);
-            window.removeEventListener("touchstart", handleTouchStart);
-            window.removeEventListener("touchend", handleTouchEnd);
-        };
+        return () => window.removeEventListener("click", handler);
     }, [particleVisible, bursting, runBurst]);
 
     return (
@@ -201,20 +157,6 @@ export function Act01Void({ onComplete }: Act01VoidProps) {
                 style={{ opacity: 0 }}
                 aria-hidden
             />
-
-            {/* Subtle click hint — fades in after 8s of no interaction */}
-            {showHint && !bursting && (
-                <p
-                    className="pointer-events-none absolute bottom-16 left-1/2 z-10 -translate-x-1/2 text-xs tracking-[0.25em] uppercase"
-                    style={{
-                        color: "var(--ok-gold)",
-                        animation: "hintPulse 4s ease-in-out infinite",
-                    }}
-                    aria-hidden
-                >
-                    {isCoarsePointer ? "tap anywhere" : "click anywhere"}
-                </p>
-            )}
         </div>
     );
 }

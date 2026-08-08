@@ -8,7 +8,9 @@ import { audioEngine } from "@/utils/audioEngine";
  * Floating subtle sound control in bottom-left corner of the experience.
  */
 export function AudioToggle() {
-  const [isPlaying, setIsPlaying] = useState(false);
+  // Initialise from the engine so we reflect any auto-unmute that happened
+  // during Act I (the burst click primes the ambient hum before this mounts).
+  const [isPlaying, setIsPlaying] = useState(() => !audioEngine.getMutedState());
 
   const handleToggle = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -28,9 +30,8 @@ export function AudioToggle() {
           <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#C9A55A] opacity-75" />
         )}
         <span
-          className={`relative inline-flex rounded-full h-2 w-2 ${
-            isPlaying ? "bg-[#C9A55A]" : "bg-[#F4F0E8]/40"
-          }`}
+          className={`relative inline-flex rounded-full h-2 w-2 ${isPlaying ? "bg-[#C9A55A]" : "bg-[#F4F0E8]/40"
+            }`}
         />
       </span>
 

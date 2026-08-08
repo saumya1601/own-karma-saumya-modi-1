@@ -1,7 +1,7 @@
 "use client";
 
 import { useFrame } from "@react-three/fiber";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 
 export interface VideoMemoryProps {
@@ -51,9 +51,12 @@ export function VideoMemory({
     texture.magFilter = THREE.LinearFilter;
     texture.format = THREE.RGBAFormat;
 
-    setVideoTexture(texture);
+    const handle = requestAnimationFrame(() => {
+      setVideoTexture(texture);
+    });
 
     return () => {
+      cancelAnimationFrame(handle);
       video.pause();
       video.removeAttribute("src");
       video.load();

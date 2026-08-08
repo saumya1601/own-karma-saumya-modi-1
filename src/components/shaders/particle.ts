@@ -13,8 +13,9 @@ export const particleVertex = /* glsl */ `
 
   void main() {
     vUv = uv;
-    // Rhythmic breathing scale expansion (pulsing star)
-    float pulse = sin(uTime * 4.5) * 0.15 + sin(uTime * 2.0) * 0.08;
+    // Slow layered breath — ~0.16 Hz (about 10 breaths/min, meditative rest).
+    // Spec: "It breathes slowly."
+    float pulse = sin(uTime * 1.0) * 0.08 + sin(uTime * 0.45) * 0.04;
     float scale = 1.0 + (1.0 - uReducedMotion) * pulse;
     vec3 pos = position * scale;
     gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
@@ -45,9 +46,6 @@ export const particleFragment = /* glsl */ `
       smoothstep(0.42, 0.0, absY) * smoothstep(0.025, 0.0, absX)
     ) * (1.0 - uReducedMotion);
 
-    // Restrained twinkle — never dips below 70%, so the core stays "alive" not "flickering"
-    float blink = 0.7 + 0.3 * (1.0 - uReducedMotion) * (sin(uTime * 6.5) * 0.6 + cos(uTime * 3.2) * 0.4);
-
     // Tight jewel-like structure:
     //   coreMask  — hot white pinprick   (0     .. 0.06)
     //   innerGlow — punchy gold body     (0     .. 0.16, pow-shaped for sharp falloff)
@@ -59,7 +57,9 @@ export const particleFragment = /* glsl */ `
     vec3 color = mix(GOLD_EDGE, GOLD_WARM, innerGlow);
     color = mix(color, WHITE_CORE, coreMask);
 
-    float alpha = (innerGlow + ringHalo + coreMask * 0.9 + diamondRays * 0.5) * uOpacity * blink;
+    // Steady luminance — the slow breath (vertex shader scale) is the only
+    // motion. Spec: "Not glowing aggressively. Almost alive."
+    float alpha = (innerGlow + ringHalo + coreMask * 0.9 + diamondRays * 0.5) * uOpacity;
     alpha = clamp(alpha, 0.0, 1.0);
 
     gl_FragColor = vec4(color * alpha, alpha);
@@ -81,11 +81,15 @@ export const burstVertex = /* glsl */ `
     // Dynamic spin rotation as particles explode
     vRotation = aRotation + uProgress * 1.5;
 
-    vec3 pos = position + aDirection * uProgress * 28.0;
+    // Travel distance chosen so an average-speed spark reaches the edge of
+    // the view frustum around progress=0.85 — fast sparks fly off screen,
+    // slow ones stay in view to be seen dimming during the fade.
+    vec3 pos = position + aDirection * uProgress * 16.0;
     vec4 mv = modelViewMatrix * vec4(pos, 1.0);
 
-    // Prominent 4-corner diamond star sizes (tapering gracefully from 36px -> 14px)
-    gl_PointSize = mix(36.0 * aScale, 14.0 * aScale, uProgress);
+    // Microscopic stars — spec: "thousands of microscopic golden stars."
+    // Small at launch, tapering to sub-pixel sparks as they fly outward.
+    gl_PointSize = mix(11.0 * aScale, 2.5 * aScale, uProgress);
     gl_Position = projectionMatrix * mv;
   }
 `;
@@ -131,8 +135,9 @@ export const burstFragment = /* glsl */ `
     vec3 color = mix(EDGE, GOLD, diamondBody);
     color = mix(color, CORE, core);
 
-    // Smooth lifespan dissipation
-    float life = 1.0 - smoothstep(0.45, 1.0, vProgress);
+    // Smooth lifespan dissipation — stars hold brightness for most of the
+    // arc, then fade in the last third so the explosion is fully readable.
+    float life = 1.0 - smoothstep(0.6, 1.0, vProgress);
     float alpha = starShape * life;
 
     gl_FragColor = vec4(color * alpha, alpha);

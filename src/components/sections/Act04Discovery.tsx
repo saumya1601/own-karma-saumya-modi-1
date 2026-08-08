@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { Fragment, useEffect, useRef, useState } from "react";
 import gsap from "gsap";
 
 export interface Act04DiscoveryProps {
@@ -15,127 +15,354 @@ export interface Act04DiscoveryProps {
 const ROOMS = [
   {
     id: 1,
-    title: "ROOM ONE — SILENCE",
+    tag: "ROOM ONE",
+    name: "SILENCE",
     text: "Every creation begins in silence.",
     video: "/videos/room1_silence.mp4",
   },
   {
     id: 2,
-    title: "ROOM TWO — TIME",
+    tag: "ROOM TWO",
+    name: "TIME",
     text: "Time never creates character. Choices do.",
     video: "/videos/room2_time.mp4",
   },
   {
     id: 3,
-    title: "ROOM THREE — PURPOSE",
+    tag: "ROOM THREE",
+    name: "PURPOSE",
     text: "We don't make clothing. We preserve intention.",
     video: "/videos/room3_purpose.mp4",
   },
   {
     id: 4,
-    title: "ROOM FOUR — LEGACY",
+    tag: "ROOM FOUR",
+    name: "LEGACY",
     text: "Everything fades. Meaning remains.",
     video: "/videos/room4_legacy.mp4",
   },
 ];
 
 /**
- * Animated Room Text Component
- * Provides luxury motion graphics: staged blur-in entrance, gold hairline expansion,
- * tracking expansion, and a soft breathing floating effect.
+ * Interactive HTML5 Gold Dust & Ambient Ripple Canvas overlay
  */
-function RoomText({ room, isActive }: { room: (typeof ROOMS)[0]; isActive: boolean }) {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const titleRef = useRef<HTMLSpanElement>(null);
-  const lineRef = useRef<HTMLDivElement>(null);
-  const quoteRef = useRef<HTMLHeadingElement>(null);
+function AmbientGoldCanvas() {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
-    const title = titleRef.current;
-    const line = lineRef.current;
-    const quote = quoteRef.current;
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
 
-    if (!title || !line || !quote) return;
+    let animId: number;
+    let width = (canvas.width = window.innerWidth);
+    let height = (canvas.height = window.innerHeight);
 
-    if (isActive) {
-      const tl = gsap.timeline({ defaults: { ease: "power3.out" } });
+    const handleResize = () => {
+      if (!canvas) return;
+      width = canvas.width = window.innerWidth;
+      height = canvas.height = window.innerHeight;
+    };
+    window.addEventListener("resize", handleResize);
 
-      // Reset initial state for fresh entrance
-      gsap.set(title, { opacity: 0, y: 20, filter: "blur(8px)", letterSpacing: "0.3em" });
-      gsap.set(line, { scaleX: 0, opacity: 0 });
-      gsap.set(quote, { opacity: 0, y: 28, filter: "blur(12px)", scale: 0.97 });
+    // Particle pool
+    const numParticles = 45;
+    const particles = Array.from({ length: numParticles }, () => ({
+      x: Math.random() * width,
+      y: Math.random() * height,
+      size: Math.random() * 2 + 0.8,
+      speedX: (Math.random() - 0.5) * 0.35,
+      speedY: -Math.random() * 0.4 - 0.15,
+      alpha: Math.random() * 0.6 + 0.2,
+      maxAlpha: Math.random() * 0.7 + 0.3,
+      pulseSpeed: Math.random() * 0.02 + 0.005,
+    }));
 
-      // 1. Room Title entrance with letter spacing expansion
-      tl.to(title, {
-        opacity: 1,
-        y: 0,
-        filter: "blur(0px)",
-        letterSpacing: "0.45em",
-        duration: 1.0,
+    let mouseX = width / 2;
+    let mouseY = height / 2;
+    const handleMouseMove = (e: MouseEvent) => {
+      mouseX = e.clientX;
+      mouseY = e.clientY;
+    };
+    window.addEventListener("mousemove", handleMouseMove);
+
+    const render = () => {
+      ctx.clearRect(0, 0, width, height);
+
+      // Subtle mouse aura glow
+      const grad = ctx.createRadialGradient(
+        mouseX,
+        mouseY,
+        0,
+        mouseX,
+        mouseY,
+        280
+      );
+      grad.addColorStop(0, "rgba(201, 165, 90, 0.06)");
+      grad.addColorStop(1, "rgba(0, 0, 0, 0)");
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, width, height);
+
+      // Render gold particles
+      particles.forEach((p) => {
+        p.x += p.speedX;
+        p.y += p.speedY;
+
+        // Soft pulse alpha
+        p.alpha += p.pulseSpeed;
+        if (p.alpha > p.maxAlpha || p.alpha < 0.1) {
+          p.pulseSpeed = -p.pulseSpeed;
+        }
+
+        // Mouse magnetic drift
+        const dx = mouseX - p.x;
+        const dy = mouseY - p.y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist < 180) {
+          p.x += (dx / dist) * 0.3;
+          p.y += (dy / dist) * 0.3;
+        }
+
+        // Screen wrap
+        if (p.y < -10) p.y = height + 10;
+        if (p.x < -10) p.x = width + 10;
+        if (p.x > width + 10) p.x = -10;
+
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(229, 193, 112, ${Math.max(0, p.alpha)})`;
+        ctx.shadowColor = "#C9A55A";
+        ctx.shadowBlur = 8;
+        ctx.fill();
+        ctx.restore();
       });
 
-      // 2. Gold Hairline Divider expansion
-      tl.to(line, { scaleX: 1, opacity: 1, duration: 0.8 }, "-=0.6");
+      animId = requestAnimationFrame(render);
+    };
 
-      // 3. Philosophical Quote entrance with soft scale & glow bloom
-      tl.to(
-        quote,
-        {
+    render();
+
+    return () => {
+      window.removeEventListener("resize", handleResize);
+      window.removeEventListener("mousemove", handleMouseMove);
+      cancelAnimationFrame(animId);
+    };
+  }, []);
+
+  return (
+    <canvas
+      ref={canvasRef}
+      className="absolute inset-0 w-full h-full pointer-events-none z-10"
+    />
+  );
+}
+
+/**
+ * Animated Staggered Motion Typography with 3D Tilt & Character Physics
+ */
+function StaggeredRoomText({
+  room,
+  isActive,
+}: {
+  room: (typeof ROOMS)[0];
+  isActive: boolean;
+}) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const tagRef = useRef<HTMLDivElement>(null);
+  const lineRef = useRef<HTMLDivElement>(null);
+  const quoteRef = useRef<HTMLDivElement>(null);
+  const charSpanRefs = useRef<(HTMLSpanElement | null)[]>([]);
+
+  // 3D Parallax tilt tracking mouse
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    const handleMouseMove = (e: MouseEvent) => {
+      const { innerWidth, innerHeight } = window;
+      const rotateX = (e.clientY / innerHeight - 0.5) * -12;
+      const rotateY = (e.clientX / innerWidth - 0.5) * 12;
+
+      gsap.to(container, {
+        rotateX,
+        rotateY,
+        duration: 1.2,
+        ease: "power2.out",
+        transformPerspective: 1000,
+      });
+    };
+
+    window.addEventListener("mousemove", handleMouseMove);
+    return () => window.removeEventListener("mousemove", handleMouseMove);
+  }, []);
+
+  // Character-by-character GSAP stagger animation
+  useEffect(() => {
+    const tag = tagRef.current;
+    const line = lineRef.current;
+    const quote = quoteRef.current;
+    const chars = charSpanRefs.current.filter(
+      (c): c is HTMLSpanElement => c !== null
+    );
+
+    if (!tag || !line || !quote || chars.length === 0) return;
+
+    const ctx = gsap.context(() => {
+      if (isActive) {
+        const tl = gsap.timeline({ defaults: { ease: "power3.out" } });
+
+        // Reset initial states
+        gsap.set(tag, { opacity: 0, y: -20, filter: "blur(8px)" });
+        gsap.set(line, { scaleX: 0, opacity: 0 });
+        gsap.set(quote, { opacity: 1 });
+        gsap.set(chars, {
+          opacity: 0,
+          y: 40,
+          rotateX: -65,
+          rotateY: -20,
+          filter: "blur(14px)",
+          scale: 1.25,
+        });
+
+        // 1. Reveal Room Header Tag (e.g. ROOM ONE • SILENCE)
+        tl.to(tag, {
           opacity: 1,
           y: 0,
           filter: "blur(0px)",
-          scale: 1,
-          duration: 1.2,
-        },
-        "-=0.5"
-      );
+          duration: 0.9,
+        });
 
-      // 4. Ambient breathing float
-      tl.to(quote, {
-        y: -5,
-        duration: 3.5,
-        repeat: -1,
-        yoyo: true,
-        ease: "sine.inOut",
-      });
+        // 2. Expand Gold Hairline Line
+        tl.to(
+          line,
+          {
+            scaleX: 1,
+            opacity: 1,
+            duration: 0.8,
+            ease: "expo.out",
+          },
+          "-=0.5"
+        );
 
-      return () => {
-        tl.kill();
-      };
-    } else {
-      gsap.to([title, line, quote], {
-        opacity: 0,
-        y: -15,
-        filter: "blur(6px)",
-        duration: 0.5,
-        ease: "power2.in",
-      });
-    }
+        // 3. Staggered character 3D entrance
+        tl.to(
+          chars,
+          {
+            opacity: 1,
+            y: 0,
+            rotateX: 0,
+            rotateY: 0,
+            filter: "blur(0px)",
+            scale: 1,
+            duration: 1.1,
+            stagger: 0.035,
+            ease: "back.out(1.4)",
+          },
+          "-=0.4"
+        );
+
+        // 4. Living floating sine wave breath per letter
+        chars.forEach((char, i) => {
+          gsap.to(char, {
+            y: i % 2 === 0 ? -4 : 4,
+            duration: 2.8 + (i % 3) * 0.4,
+            repeat: -1,
+            yoyo: true,
+            ease: "sine.inOut",
+            delay: 1.1 + i * 0.03,
+          });
+        });
+      } else {
+        gsap.to([tag, line, ...chars], {
+          opacity: 0,
+          y: -20,
+          filter: "blur(10px)",
+          duration: 0.6,
+          ease: "power2.in",
+        });
+      }
+    });
+
+    return () => ctx.revert();
   }, [isActive]);
 
-  return (
-    <div ref={containerRef} className="relative z-10 space-y-6 max-w-4xl px-4 flex flex-col items-center">
-      {/* Room Title Tag */}
-      <span
-        ref={titleRef}
-        className="inline-block text-xs uppercase tracking-[0.45em] text-[#C9A55A] font-mono filter drop-shadow-[0_0_12px_rgba(201,165,90,0.6)]"
-      >
-        {room.title}
-      </span>
+  // Split into words so each word never breaks mid-letter, while still
+  // exposing every character to the per-letter GSAP stagger.
+  const rawText = `"${room.text}"`;
+  const words: { chars: string[]; startIdx: number }[] = [];
+  let __charOffset = 0;
+  for (const rawWord of rawText.split(" ")) {
+    words.push({ chars: Array.from(rawWord), startIdx: __charOffset });
+    __charOffset += rawWord.length;
+  }
 
-      {/* Gold Accent Hairline Line */}
+  return (
+    <div
+      ref={containerRef}
+      className="relative z-20 max-w-5xl px-6 flex flex-col items-center select-none transform-preserve-3d"
+      aria-label={room.name}
+    >
+      {/* Subtle luxury radial background backdrop behind text */}
+      <div className="absolute -inset-10 bg-radial from-black/80 via-black/40 to-transparent blur-3xl pointer-events-none rounded-full" />
+
+      {/* Room Category Tag (e.g. ROOM ONE • SILENCE) */}
+      <div
+        ref={tagRef}
+        className="relative z-10 flex items-center gap-3 mb-4 opacity-0"
+      >
+        <span className="font-mono text-xs sm:text-sm tracking-[0.45em] uppercase text-[#C9A55A]/90 font-light">
+          {room.tag}
+        </span>
+        <span className="w-1.5 h-1.5 rounded-full bg-[#C9A55A] shadow-[0_0_8px_#C9A55A]" />
+        <span className="font-mono text-xs sm:text-sm tracking-[0.45em] uppercase text-[#F4F0E8]/80 font-light">
+          {room.name}
+        </span>
+      </div>
+
+      {/* Gold hairline accent line */}
       <div
         ref={lineRef}
-        className="w-28 h-px bg-gradient-to-r from-transparent via-[#C9A55A] to-transparent origin-center opacity-0"
+        className="relative z-10 w-36 h-[1px] mb-8 bg-gradient-to-r from-transparent via-[#C9A55A] to-transparent origin-center opacity-0 shadow-[0_0_12px_rgba(201,165,90,0.8)]"
       />
 
-      {/* Room Philosophical Quote Text */}
-      <h2
+      {/* Main Quote with Letter-by-Letter 3D Stagger */}
+      <div
         ref={quoteRef}
-        className="font-[var(--font-cormorant)] italic text-[#F4F0E8] text-4xl sm:text-6xl md:text-7xl font-light tracking-wide filter drop-shadow-[0_0_30px_rgba(201,165,90,0.45)] leading-tight"
+        className="relative z-10 text-center leading-tight tracking-wide"
+        style={{
+          fontFamily:
+            "var(--font-cormorant), 'Cormorant Garamond', Georgia, serif",
+        }}
       >
-        &ldquo;{room.text}&rdquo;
-      </h2>
+        <h2 className="text-4xl sm:text-6xl md:text-7xl lg:text-8xl font-light italic text-[#F4F0E8] filter drop-shadow-[0_0_25px_rgba(201,165,90,0.35)]">
+          {words.map(({ chars, startIdx }, wIdx) => (
+            <Fragment key={wIdx}>
+              <span className="inline-block whitespace-nowrap">
+                {chars.map((char, cIdx) => {
+                  const globalIdx = startIdx + cIdx;
+                  return (
+                    <span
+                      key={globalIdx}
+                      ref={(el) => {
+                        charSpanRefs.current[globalIdx] = el;
+                      }}
+                      className="inline-block transform-preserve-3d bg-gradient-to-b from-[#FFFDF9] via-[#F4F0E8] to-[#D9C496] bg-clip-text text-transparent"
+                      style={{
+                        willChange: "transform, opacity, filter",
+                      }}
+                    >
+                      {char}
+                    </span>
+                  );
+                })}
+              </span>
+              {wIdx < words.length - 1 && " "}
+            </Fragment>
+          ))}
+        </h2>
+      </div>
     </div>
   );
 }
@@ -143,10 +370,14 @@ function RoomText({ room, isActive }: { room: (typeof ROOMS)[0]; isActive: boole
 /**
  * ACT IV — "The Discovery" (4 Enormous Rooms)
  *
- * 4K AI Video background playback engine for the 4 rooms with direct scroll transitions
- * and precision motion typography.
+ * 4K AI Video background playback engine with ambient GLSL/Canvas particle overlay,
+ * interactive 3D parallax typography, and letter-by-letter GSAP animation.
  */
-export function Act04Discovery({ onComplete, onBack, initialProgress = 0 }: Act04DiscoveryProps) {
+export function Act04Discovery({
+  onComplete,
+  onBack,
+  initialProgress = 0,
+}: Act04DiscoveryProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const roomRefs = useRef<(HTMLElement | null)[]>([]);
   const videoRefs = useRef<(HTMLVideoElement | null)[]>([]);
@@ -261,17 +492,10 @@ export function Act04Discovery({ onComplete, onBack, initialProgress = 0 }: Act0
       className="fixed inset-0 overflow-y-auto bg-[#000000] select-none snap-y snap-mandatory"
       aria-label="Act IV: The Discovery"
     >
-      {/* Top-Left Back Button */}
-      {onBack && (
-        <button
-          type="button"
-          onClick={() => onBack?.()}
-          className="fixed top-6 left-6 z-50 text-xs font-mono uppercase tracking-[0.25em] text-[#C9A55A]/70 hover:text-[#C9A55A] transition-colors cursor-pointer flex items-center gap-2"
-        >
-          ← Back
-        </button>
-      )}
-      {/* 4 Enormous Scrollable Rooms */}
+      {/* Interactive Ambient Gold Canvas */}
+      <AmbientGoldCanvas />
+
+      {/* 4 Enormous Rooms — auto-advance on video end, no scroll hints, no CTAs. */}
       {ROOMS.map((room, idx) => (
         <section
           key={room.id}
@@ -301,33 +525,15 @@ export function Act04Discovery({ onComplete, onBack, initialProgress = 0 }: Act0
                 onComplete?.();
               }
             }}
-            className="absolute inset-0 w-full h-full object-cover z-0 opacity-85 filter brightness-90 contrast-105 transition-opacity duration-1000"
+            className="absolute inset-0 w-full h-full object-cover z-0 opacity-85 filter brightness-90 contrast-110 scale-105 transition-all duration-1000"
           />
 
-          {/* Vignette Overlay for Dark Integration */}
-          <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-black opacity-80 pointer-events-none z-5" />
+          {/* Vignette & Radial Glow Overlay */}
+          <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-black opacity-85 pointer-events-none z-5" />
+          <div className="absolute inset-0 bg-radial from-transparent via-black/30 to-black/90 pointer-events-none z-5" />
 
           {/* Room Motion Typography Content */}
-          <RoomText room={room} isActive={idx === currentRoomIndex} />
-
-          {/* Scroll Down Indicator for Rooms 1-3, and Enter Realization Button for Room 4 */}
-          {idx < ROOMS.length - 1 ? (
-            <div className="absolute bottom-10 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 z-10">
-              <span className="text-xs uppercase tracking-[0.3em] text-[#F4F0E8]/60 font-mono">
-                Scroll to next room
-              </span>
-              <span className="text-[#C9A55A] text-2xl font-light animate-pulse">
-                ↓
-              </span>
-            </div>
-          ) : (
-            <button
-              onClick={() => onComplete?.()}
-              className="absolute bottom-10 left-1/2 -translate-x-1/2 px-8 py-3 rounded-full bg-black/50 text-[#C9A55A] font-[var(--font-cormorant)] italic text-lg tracking-[0.3em] uppercase border border-[#C9A55A]/40 transition-all duration-500 hover:border-[#C9A55A] hover:bg-[#C9A55A]/15 hover:shadow-[0_0_25px_rgba(201,165,90,0.35)] z-20 cursor-pointer"
-            >
-              Enter Realization →
-            </button>
-          )}
+          <StaggeredRoomText room={room} isActive={idx === currentRoomIndex} />
         </section>
       ))}
     </div>

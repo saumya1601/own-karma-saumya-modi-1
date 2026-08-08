@@ -282,16 +282,6 @@ export function Act08FinalScreen({ onBack }: Act08FinalScreenProps) {
 
   return (
     <div className="fixed inset-0 flex items-center justify-center bg-[#050505] px-6 select-none overflow-hidden">
-      {/* Top-Left Back Button */}
-      {onBack && (
-        <button
-          type="button"
-          onClick={() => onBack?.()}
-          className="fixed top-6 left-6 z-50 text-xs font-mono uppercase tracking-[0.25em] text-[#C9A55A]/70 hover:text-[#C9A55A] transition-colors cursor-pointer flex items-center gap-2"
-        >
-          ← Back
-        </button>
-      )}
       {/* Radial Aura */}
       <div className="absolute top-1/2 left-1/2 w-180 h-180 bg-radial from-[#C9A55A]/15 via-transparent to-transparent pointer-events-none filter blur-3xl animate-[auraBreathe_6s_ease-in-out_infinite]" />
 

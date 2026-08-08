@@ -1,10 +1,10 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import gsap from "gsap";
 
 export interface Act07CommunityProps {
-  /** Callback fired when user completes Act VII. */
+  /** Callback fired once particle assembly reaches 100%. */
   onComplete?: () => void;
   /** Callback fired when visitor scrolls backward. */
   onBack?: () => void;
@@ -31,12 +31,18 @@ interface Particle {
 }
 
 /**
- * ACT VII — "The Community" (Automated Particle Assembly Edition)
+ * ACT VII — "The Community" (The Assembly of Souls)
  *
- * 5,000 gold particles automatically gather across pitch darkness to form each phrase over time.
- * Zero scroll required.
+ * 1,800 gold particles float in dark chaotic space. As time progresses (or on scroll),
+ * magnetic forces pull them together to assemble the phrase: "YOU ARE OWN KARMA".
+ *
+ * Spec: _documents/OWN_KARMA_Landing_Page_Experience_Spec.md — ACT VII.
  */
-export function Act07Community({ onComplete, onBack, initialProgress = 0 }: Act07CommunityProps) {
+export function Act07Community({
+  onComplete,
+  onBack,
+  initialProgress = 0,
+}: Act07CommunityProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const mouseRef = useRef({ x: -1000, y: -1000, active: false });
@@ -57,30 +63,30 @@ export function Act07Community({ onComplete, onBack, initialProgress = 0 }: Act0
     return () => clearTimeout(timer);
   }, []);
 
-  const triggerBack = () => {
+  const triggerBack = useCallback(() => {
     if (transitionFiredRef.current) return;
     transitionFiredRef.current = true;
     setOverlayOpacity(1);
     setTimeout(() => {
       onBack?.();
     }, 800);
-  };
+  }, [onBack]);
 
-  const triggerComplete = () => {
+  const triggerComplete = useCallback(() => {
     if (transitionFiredRef.current) return;
     transitionFiredRef.current = true;
     setOverlayOpacity(1);
     setTimeout(() => {
       onComplete?.();
     }, 800);
-  };
+  }, [onComplete]);
 
   // Listen to wheel, touch swipe, and keyboard navigation for both forward & backward
   useEffect(() => {
     const handleWheel = (e: WheelEvent) => {
       if (e.deltaY < -20 && onBack) {
         triggerBack();
-      } else if (e.deltaY > 20) {
+      } else if (e.deltaY > 20 && progress >= 0.95) {
         triggerComplete();
       }
     };
@@ -88,7 +94,7 @@ export function Act07Community({ onComplete, onBack, initialProgress = 0 }: Act0
     const handleKeyDown = (e: KeyboardEvent) => {
       if ((e.key === "Escape" || e.key === "ArrowUp") && onBack) {
         triggerBack();
-      } else if (e.key === "ArrowDown" || e.key === "Enter" || e.key === " ") {
+      } else if ((e.key === "ArrowDown" || e.key === "Enter" || e.key === " ") && progress >= 0.95) {
         triggerComplete();
       }
     };
@@ -102,7 +108,7 @@ export function Act07Community({ onComplete, onBack, initialProgress = 0 }: Act0
       const diffY = startY - e.touches[0].clientY;
       if (diffY < -40 && onBack) {
         triggerBack();
-      } else if (diffY > 40) {
+      } else if (diffY > 40 && progress >= 0.95) {
         triggerComplete();
       }
     };
@@ -118,7 +124,7 @@ export function Act07Community({ onComplete, onBack, initialProgress = 0 }: Act0
       window.removeEventListener("touchstart", handleTouchStart);
       window.removeEventListener("touchmove", handleTouchMove);
     };
-  }, [onBack]);
+  }, [onBack, progress, triggerBack, triggerComplete]);
 
   // Automated particle assembly timeline (0 to 1 over 40 seconds with auto transition on finish).
   // Skipped entirely when arriving backward from Act VIII — the phrase is
@@ -358,26 +364,6 @@ export function Act07Community({ onComplete, onBack, initialProgress = 0 }: Act0
       className="fixed inset-0 bg-[#000000] select-none cursor-pointer"
       aria-label="Act VII: The Community"
     >
-      {/* Top-Left Back Button */}
-      {onBack && (
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            triggerBack();
-          }}
-          className="fixed top-6 left-6 z-40 text-xs font-mono uppercase tracking-[0.25em] text-[#C9A55A]/70 hover:text-[#C9A55A] transition-colors cursor-pointer flex items-center gap-2"
-        >
-          ← Back
-        </button>
-      )}
-      {/* Sleek Top Gold Progress Bar */}
-      <div className="fixed top-0 left-0 right-0 h-1 bg-black/40 z-30 pointer-events-none">
-        <div
-          className="h-full bg-gradient-to-r from-[var(--ok-gold)] via-[#E6CA65] to-[var(--ok-gold)] transition-all duration-75 shadow-[0_0_12px_rgba(201,165,90,0.8)]"
-          style={{ width: `${Math.min(100, Math.max(0, progress * 100))}%` }}
-        />
-      </div>
-
       {/* Pure Gold Particle Canvas */}
       <canvas ref={canvasRef} className="absolute inset-0 w-full h-full pointer-events-none z-10" />
 

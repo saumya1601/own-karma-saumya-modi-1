@@ -119,6 +119,36 @@ class AudioEngine {
     osc.stop(now + 1.2);
   }
 
+  /** Single low-frequency heartbeat thump — used by Act II's "A heartbeat. One beat." */
+  public triggerHeartbeat() {
+    if (!this.ctx || !this.masterGain || this.isMuted) return;
+
+    const now = this.ctx.currentTime;
+    const osc = this.ctx.createOscillator();
+    const filter = this.ctx.createBiquadFilter();
+    const gain = this.ctx.createGain();
+
+    // Pitch drops 80 -> 40Hz for a natural "kick" thump
+    osc.type = "sine";
+    osc.frequency.setValueAtTime(80, now);
+    osc.frequency.exponentialRampToValueAtTime(40, now + 0.15);
+
+    filter.type = "lowpass";
+    filter.frequency.setValueAtTime(200, now);
+
+    // Sharp attack, medium decay
+    gain.gain.setValueAtTime(0.0001, now);
+    gain.gain.exponentialRampToValueAtTime(0.5, now + 0.03);
+    gain.gain.exponentialRampToValueAtTime(0.0001, now + 1.0);
+
+    osc.connect(filter);
+    filter.connect(gain);
+    gain.connect(this.masterGain);
+
+    osc.start(now);
+    osc.stop(now + 1.1);
+  }
+
   /** Toggle Audio Mute / Unmute */
   public toggle(): boolean {
     if (!this.isInitialized) {

@@ -61,9 +61,12 @@ export function DustParticles({ count = 1200 }: { count?: number }) {
   const positions = useMemo(() => {
     const pos = new Float32Array(count * 3);
     for (let i = 0; i < count; i++) {
-      pos[i * 3] = (Math.random() - 0.5) * 16;     // X spread
-      pos[i * 3 + 1] = (Math.random() - 0.5) * 10; // Y spread
-      pos[i * 3 + 2] = 5 - Math.random() * 110;    // Z spread along corridor
+      const r1 = Math.sin(i * 12.9898 + 78.233) * 43758.5453;
+      const r2 = Math.sin(i * 39.3461 + 11.135) * 43758.5453;
+      const r3 = Math.sin(i * 73.1567 + 54.891) * 43758.5453;
+      pos[i * 3] = (r1 - Math.floor(r1) - 0.5) * 16;     // X spread
+      pos[i * 3 + 1] = (r2 - Math.floor(r2) - 0.5) * 10; // Y spread
+      pos[i * 3 + 2] = 5 - (r3 - Math.floor(r3)) * 110;  // Z spread along corridor
     }
     return pos;
   }, [count]);
