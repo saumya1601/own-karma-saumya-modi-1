@@ -27,38 +27,39 @@ export const particleFragment = /* glsl */ `
   uniform float uOpacity;
   uniform float uReducedMotion;
 
-  // OWN KARMA Luxury Palette
-  const vec3 WHITE_CORE = vec3(1.000, 0.980, 0.900); // White-hot radiant core
-  const vec3 GOLD_WARM  = vec3(0.950, 0.820, 0.450); // Luminous gold
-  const vec3 GOLD_EDGE  = vec3(0.788, 0.635, 0.294); // Antique gold
-  const vec3 AURA_GLOW  = vec3(0.600, 0.450, 0.150); // Deep golden corona aura
+  // OWN KARMA Luxury Palette — refined for crystalline clarity
+  const vec3 WHITE_CORE = vec3(1.000, 0.985, 0.920); // White-hot pinprick core
+  const vec3 GOLD_WARM  = vec3(0.980, 0.850, 0.480); // Luminous gold body
+  const vec3 GOLD_EDGE  = vec3(0.850, 0.700, 0.320); // Antique gold rim
 
   void main() {
     vec2 p = vUv - vec2(0.5);
     float d = length(p);
     if (d > 0.5) discard;
 
-    // 4-corner diamond flare rays
+    // Needle-thin 4-corner diamond rays
     float absX = abs(p.x);
     float absY = abs(p.y);
     float diamondRays = max(
-      smoothstep(0.48, 0.0, absX) * smoothstep(0.06, 0.0, absY),
-      smoothstep(0.48, 0.0, absY) * smoothstep(0.06, 0.0, absX)
+      smoothstep(0.42, 0.0, absX) * smoothstep(0.025, 0.0, absY),
+      smoothstep(0.42, 0.0, absY) * smoothstep(0.025, 0.0, absX)
     ) * (1.0 - uReducedMotion);
 
-    // Distinct, rhythmic star blinking / twinkling pulse (frequency 6.5 rad/s)
-    float blink = 0.55 + 0.45 * (1.0 - uReducedMotion) * (sin(uTime * 6.5) * 0.6 + cos(uTime * 3.2) * 0.4);
+    // Restrained twinkle — never dips below 70%, so the core stays "alive" not "flickering"
+    float blink = 0.7 + 0.3 * (1.0 - uReducedMotion) * (sin(uTime * 6.5) * 0.6 + cos(uTime * 3.2) * 0.4);
 
-    // Multi-stage radial falloff: intense white core -> warm gold -> corona halo
-    float coreMask = smoothstep(0.14, 0.0, d);
-    float innerGlow = smoothstep(0.35, 0.08, d);
-    float outerAura = smoothstep(0.5, 0.2, d);
+    // Tight jewel-like structure:
+    //   coreMask  — hot white pinprick   (0     .. 0.06)
+    //   innerGlow — punchy gold body     (0     .. 0.16, pow-shaped for sharp falloff)
+    //   ringHalo  — thin luminous ring   (0.14  .. 0.28) that dies fast
+    float coreMask  = smoothstep(0.06, 0.0, d);
+    float innerGlow = pow(smoothstep(0.16, 0.0, d), 1.8);
+    float ringHalo  = smoothstep(0.28, 0.14, d) * 0.35;
 
-    vec3 color = mix(AURA_GLOW, GOLD_EDGE, smoothstep(0.5, 0.3, d));
-    color = mix(color, GOLD_WARM, innerGlow);
+    vec3 color = mix(GOLD_EDGE, GOLD_WARM, innerGlow);
     color = mix(color, WHITE_CORE, coreMask);
 
-    float alpha = (outerAura + coreMask * 0.7 + diamondRays * 0.6) * uOpacity * blink;
+    float alpha = (innerGlow + ringHalo + coreMask * 0.9 + diamondRays * 0.5) * uOpacity * blink;
     alpha = clamp(alpha, 0.0, 1.0);
 
     gl_FragColor = vec4(color * alpha, alpha);

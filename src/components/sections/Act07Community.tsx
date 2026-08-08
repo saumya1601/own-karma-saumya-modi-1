@@ -36,17 +36,17 @@ interface Particle {
  * 5,000 gold particles automatically gather across pitch darkness to form each phrase over time.
  * Zero scroll required.
  */
-export function Act07Community({ onComplete, onBack }: Act07CommunityProps) {
+export function Act07Community({ onComplete, onBack, initialProgress = 0 }: Act07CommunityProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const mouseRef = useRef({ x: -1000, y: -1000, active: false });
   const transitionFiredRef = useRef(false);
 
-  const targetProgressRef = useRef<number>(0);
-  const currentProgressRef = useRef<number>(0);
+  const targetProgressRef = useRef<number>(initialProgress);
+  const currentProgressRef = useRef<number>(initialProgress);
 
-  const [progress, setProgress] = useState<number>(0);
-  const [canClick, setCanClick] = useState<boolean>(false);
+  const [progress, setProgress] = useState<number>(initialProgress);
+  const [canClick, setCanClick] = useState<boolean>(initialProgress >= 1);
   const [overlayOpacity, setOverlayOpacity] = useState<number>(1);
 
   // Smooth fade-in on mount
@@ -63,6 +63,15 @@ export function Act07Community({ onComplete, onBack }: Act07CommunityProps) {
     setOverlayOpacity(1);
     setTimeout(() => {
       onBack?.();
+    }, 800);
+  };
+
+  const triggerComplete = () => {
+    if (transitionFiredRef.current) return;
+    transitionFiredRef.current = true;
+    setOverlayOpacity(1);
+    setTimeout(() => {
+      onComplete?.();
     }, 800);
   };
 
@@ -111,8 +120,12 @@ export function Act07Community({ onComplete, onBack }: Act07CommunityProps) {
     };
   }, [onBack]);
 
-  // Automated particle assembly timeline (0 to 1 over 40 seconds with auto transition on finish)
+  // Automated particle assembly timeline (0 to 1 over 40 seconds with auto transition on finish).
+  // Skipped entirely when arriving backward from Act VIII — the phrase is
+  // already fully assembled, so it should hold there rather than replay.
   useEffect(() => {
+    if (initialProgress >= 1) return;
+
     const progressObj = { value: 0 };
     const tween = gsap.to(progressObj, {
       value: 1,
@@ -132,6 +145,7 @@ export function Act07Community({ onComplete, onBack }: Act07CommunityProps) {
     return () => {
       tween.kill();
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
@@ -330,17 +344,8 @@ export function Act07Community({ onComplete, onBack }: Act07CommunityProps) {
     mouseRef.current.active = false;
   };
 
-  const triggerComplete = () => {
-    if (transitionFiredRef.current) return;
-    transitionFiredRef.current = true;
-    setOverlayOpacity(1);
-    setTimeout(() => {
-      onComplete?.();
-    }, 800);
-  };
-
   const handleClick = () => {
-    if (transitionFiredRef.current) return;
+    if (transitionFiredRef.current || !canClick) return;
     triggerComplete();
   };
 

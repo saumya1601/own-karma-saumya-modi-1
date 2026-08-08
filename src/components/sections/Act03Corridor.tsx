@@ -15,7 +15,7 @@ export interface Act03CorridorProps {
  * ACT III — "The Corridor"
  * Direct Video Playback Engine. Plays the video directly without scroll effects.
  */
-export function Act03Corridor({ onComplete, onBack }: Act03CorridorProps) {
+export function Act03Corridor({ onComplete, onBack, initialProgress = 0 }: Act03CorridorProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const progressBarRef = useRef<HTMLDivElement>(null);
   const transitionFiredRef = useRef<boolean>(false);
@@ -28,14 +28,31 @@ export function Act03Corridor({ onComplete, onBack }: Act03CorridorProps) {
       setOverlayOpacity(0);
     }, 50);
 
-    if (videoRef.current) {
-      videoRef.current.play().catch(() => {
-        // Autoplay policy fallback
-      });
+    const video = videoRef.current;
+    if (video) {
+      if (initialProgress >= 1) {
+        // Arriving backward from Act IV — resume on the corridor's final
+        // frame instead of replaying the whole video from the start.
+        const seekToEnd = () => {
+          video.currentTime = Math.max(0, video.duration - 0.05);
+          if (progressBarRef.current) {
+            progressBarRef.current.style.transform = "scaleX(1)";
+          }
+        };
+        if (video.readyState >= 1) {
+          seekToEnd();
+        } else {
+          video.addEventListener("loadedmetadata", seekToEnd, { once: true });
+        }
+      } else {
+        video.play().catch(() => {
+          // Autoplay policy fallback
+        });
+      }
     }
 
     return () => clearTimeout(timer);
-  }, []);
+  }, [initialProgress]);
 
   const triggerComplete = () => {
     if (transitionFiredRef.current) return;

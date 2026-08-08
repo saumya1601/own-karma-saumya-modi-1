@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   Act01Void,
   Act02Questions,
@@ -23,19 +23,54 @@ type Phase =
   | "community"
   | "final";
 
+// How long a single act-to-act transition is considered "in flight". While
+// locked, every subsequent onComplete/onBack call is ignored. This is the
+// guard that individual Acts can't provide themselves: each Act stores its
+// own "already transitioned" flag in a local ref, but that ref is wiped out
+// the instant the Act unmounts. Trackpad inertia keeps emitting wheel events
+// for a few hundred ms after the gesture ends, which — without a lock that
+// survives the remount — was tripping the *next* act's threshold too and
+// skipping straight through it.
+const TRANSITION_LOCK_MS = 900;
+const OVERLAY_FADE_MS = 650;
+
 export default function Home() {
   const [phase, setPhase] = useState<Phase>("void");
   const [direction, setDirection] = useState<"forward" | "backward">("forward");
+  const overlayRef = useRef<HTMLDivElement>(null);
+  const lockedRef = useRef(false);
 
-  const goToNext = (nextPhase: Phase) => {
-    setDirection("forward");
-    setPhase(nextPhase);
+  const navigate = (nextPhase: Phase, dir: "forward" | "backward") => {
+    if (lockedRef.current) return;
+    lockedRef.current = true;
+
+    const overlay = overlayRef.current;
+    // Snap to fully opaque with no transition so it covers the outgoing
+    // frame before React swaps the tree underneath it.
+    if (overlay) {
+      overlay.style.transition = "none";
+      overlay.style.opacity = "1";
+    }
+
+    requestAnimationFrame(() => {
+      setDirection(dir);
+      setPhase(nextPhase);
+
+      requestAnimationFrame(() => {
+        if (overlay) {
+          overlay.style.transition = `opacity ${OVERLAY_FADE_MS}ms ease-out`;
+          overlay.style.opacity = "0";
+        }
+      });
+    });
+
+    window.setTimeout(() => {
+      lockedRef.current = false;
+    }, TRANSITION_LOCK_MS);
   };
 
-  const goToPrev = (prevPhase: Phase) => {
-    setDirection("backward");
-    setPhase(prevPhase);
-  };
+  const goToNext = (nextPhase: Phase) => navigate(nextPhase, "forward");
+  const goToPrev = (prevPhase: Phase) => navigate(prevPhase, "backward");
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -66,6 +101,16 @@ export default function Home() {
 
   return (
     <main className="fixed inset-0 bg-[#000000]">
+      {/* Cross-act transition curtain — guarantees every phase change fades
+          through black uniformly, regardless of whether the individual Act
+          has its own exit animation. */}
+      <div
+        ref={overlayRef}
+        className="pointer-events-none fixed inset-0 z-[200] bg-black"
+        style={{ opacity: 0 }}
+        aria-hidden
+      />
+
       {/* Floating Sound Toggle */}
       <AudioToggle />
 

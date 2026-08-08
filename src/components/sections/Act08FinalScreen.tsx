@@ -52,6 +52,48 @@ const PROMPTS: {
     },
   ];
 
+/** Preset drift paths for the ambient gold embers on the finale beat. */
+const EMBERS: { left: string; duration: number; delay: number; drift: string }[] = [
+  { left: "12%", duration: 7.0, delay: 0.0, drift: "10px" },
+  { left: "22%", duration: 9.0, delay: 1.2, drift: "-14px" },
+  { left: "35%", duration: 6.5, delay: 2.4, drift: "8px" },
+  { left: "48%", duration: 8.0, delay: 0.6, drift: "-6px" },
+  { left: "58%", duration: 7.5, delay: 3.0, drift: "12px" },
+  { left: "67%", duration: 9.5, delay: 1.8, drift: "-10px" },
+  { left: "76%", duration: 6.8, delay: 2.9, drift: "6px" },
+  { left: "84%", duration: 8.4, delay: 0.3, drift: "-8px" },
+  { left: "40%", duration: 10.0, delay: 4.0, drift: "4px" },
+  { left: "60%", duration: 7.2, delay: 3.6, drift: "-4px" },
+];
+
+/** Fixed constellation of ambient stars scattered across the whole viewport. */
+const STARS: { top: string; left: string; size: number; duration: number; delay: number }[] = [
+  { top: "6%", left: "12%", size: 1.5, duration: 4.5, delay: 0.0 },
+  { top: "10%", left: "42%", size: 0.8, duration: 6.8, delay: 3.0 },
+  { top: "15%", left: "78%", size: 1.0, duration: 6.0, delay: 1.8 },
+  { top: "18%", left: "24%", size: 1.2, duration: 7.2, delay: 4.2 },
+  { top: "22%", left: "56%", size: 1.5, duration: 5.2, delay: 2.5 },
+  { top: "26%", left: "88%", size: 1.5, duration: 4.8, delay: 3.4 },
+  { top: "30%", left: "5%", size: 1.0, duration: 7.4, delay: 4.6 },
+  { top: "34%", left: "38%", size: 0.8, duration: 5.6, delay: 1.1 },
+  { top: "38%", left: "70%", size: 1.5, duration: 5.8, delay: 0.7 },
+  { top: "44%", left: "16%", size: 1.2, duration: 6.4, delay: 2.8 },
+  { top: "48%", left: "52%", size: 0.9, duration: 4.0, delay: 1.5 },
+  { top: "52%", left: "92%", size: 1.8, duration: 5.5, delay: 2.0 },
+  { top: "58%", left: "8%", size: 1.0, duration: 6.5, delay: 1.2 },
+  { top: "62%", left: "44%", size: 1.2, duration: 5.0, delay: 3.9 },
+  { top: "66%", left: "74%", size: 1.4, duration: 6.2, delay: 3.1 },
+  { top: "72%", left: "22%", size: 1.0, duration: 5.0, delay: 2.9 },
+  { top: "76%", left: "60%", size: 0.8, duration: 7.0, delay: 4.4 },
+  { top: "80%", left: "84%", size: 1.5, duration: 7.5, delay: 0.4 },
+  { top: "86%", left: "36%", size: 1.2, duration: 5.4, delay: 2.2 },
+  { top: "90%", left: "68%", size: 1.0, duration: 6.6, delay: 3.7 },
+  { top: "12%", left: "62%", size: 0.9, duration: 5.9, delay: 4.9 },
+  { top: "40%", left: "84%", size: 1.0, duration: 4.4, delay: 0.9 },
+  { top: "68%", left: "48%", size: 0.8, duration: 7.8, delay: 2.4 },
+  { top: "82%", left: "12%", size: 1.2, duration: 5.3, delay: 4.0 },
+];
+
 /**
  * ACT VIII — "OWN YOUR KARMA" (The Final Screen)
  *
@@ -66,8 +108,16 @@ export function Act08FinalScreen({ onBack }: Act08FinalScreenProps) {
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState("");
   const transitionFiredRef = useRef(false);
+  const overtitleRef = useRef<HTMLDivElement>(null);
   const stepStageRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const outerRingRef = useRef<SVGPathElement>(null);
+  const innerRingRef = useRef<SVGPathElement>(null);
+  const ringWrapRef = useRef<HTMLDivElement>(null);
+  const line1Ref = useRef<HTMLParagraphElement>(null);
+  const line2Ref = useRef<HTMLSpanElement>(null);
+  const becomingRef = useRef<HTMLParagraphElement>(null);
+  const wordmarkRef = useRef<HTMLHeadingElement>(null);
 
   useEffect(() => {
     const handleWheel = (e: WheelEvent) => {
@@ -105,17 +155,80 @@ export function Act08FinalScreen({ onBack }: Act08FinalScreenProps) {
   // Animate each step transition and autofocus the next input.
   useEffect(() => {
     if (submitted) return;
+    const overtitle = overtitleRef.current;
     const stage = stepStageRef.current;
-    if (stage) {
-      gsap.fromTo(
-        stage,
-        { opacity: 0, y: 18, filter: "blur(6px)" },
-        { opacity: 1, y: 0, filter: "blur(0px)", duration: 0.9, ease: "power3.out" }
-      );
-    }
+
+    const ctx = gsap.context(() => {
+      const tl = gsap.timeline();
+      if (overtitle) {
+        tl.fromTo(
+          overtitle,
+          { opacity: 0, y: -10, scale: 0.94, filter: "blur(4px)" },
+          { opacity: 1, y: 0, scale: 1, filter: "blur(0px)", duration: 0.7, ease: "power3.out" }
+        );
+      }
+      if (stage) {
+        tl.fromTo(
+          stage,
+          { opacity: 0, y: 18, filter: "blur(6px)" },
+          { opacity: 1, y: 0, filter: "blur(0px)", duration: 0.9, ease: "power3.out" },
+          overtitle ? "-=0.5" : 0
+        );
+      }
+    });
+
     const t = window.setTimeout(() => inputRef.current?.focus(), 350);
-    return () => window.clearTimeout(t);
+    return () => {
+      window.clearTimeout(t);
+      ctx.revert();
+    };
   }, [step, submitted]);
+
+  // Ceremonial reveal for the post-ENTER finale: sigil stitches in, then
+  // text lines rise into place one by one.
+  useEffect(() => {
+    if (!submitted) return;
+
+    const outerRing = outerRingRef.current;
+    const innerRing = innerRingRef.current;
+    const ringWrap = ringWrapRef.current;
+    const line1 = line1Ref.current;
+    const line2 = line2Ref.current;
+    const becoming = becomingRef.current;
+    const wordmark = wordmarkRef.current;
+
+    const ctx = gsap.context(() => {
+      const tl = gsap.timeline({ delay: 0.1 });
+
+      if (ringWrap) {
+        gsap.set(ringWrap, { opacity: 0, scale: 0.6 });
+        tl.to(ringWrap, { opacity: 1, scale: 1, duration: 0.7, ease: "power3.out" });
+      }
+
+      [outerRing, innerRing].forEach((ring, i) => {
+        if (!ring) return;
+        const len = ring.getTotalLength();
+        gsap.set(ring, { strokeDasharray: len, strokeDashoffset: len });
+        tl.to(
+          ring,
+          { strokeDashoffset: 0, duration: 0.9, ease: "power2.inOut" },
+          i === 0 ? "<" : "<0.1"
+        );
+      });
+
+      [line1, line2, becoming, wordmark].forEach((el, i) => {
+        if (!el) return;
+        gsap.set(el, { opacity: 0, y: 16, filter: "blur(6px)" });
+        tl.to(
+          el,
+          { opacity: 1, y: 0, filter: "blur(0px)", duration: 0.8, ease: "power3.out" },
+          i === 0 ? "-=0.3" : "-=0.5"
+        );
+      });
+    });
+
+    return () => ctx.revert();
+  }, [submitted]);
 
   const values: Record<"name" | "email" | "becoming", string> = {
     name,
@@ -180,7 +293,49 @@ export function Act08FinalScreen({ onBack }: Act08FinalScreenProps) {
         </button>
       )}
       {/* Radial Aura */}
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-180 h-180 bg-radial from-[#C9A55A]/15 via-transparent to-transparent pointer-events-none filter blur-3xl" />
+      <div className="absolute top-1/2 left-1/2 w-180 h-180 bg-radial from-[#C9A55A]/15 via-transparent to-transparent pointer-events-none filter blur-3xl animate-[auraBreathe_6s_ease-in-out_infinite]" />
+
+      {/* Drifting gold embers — ambient life across the whole invocation */}
+      <div className="absolute inset-0 pointer-events-none overflow-hidden">
+        {EMBERS.map((ember, i) => (
+          <span
+            key={i}
+            className="absolute bottom-[12%] w-1 h-1 rounded-full bg-[#E8C87A] shadow-[0_0_6px_2px_rgba(201,165,90,0.6)]"
+            style={
+              {
+                left: ember.left,
+                animationName: "emberRise",
+                animationDuration: `${ember.duration}s`,
+                animationDelay: `${ember.delay}s`,
+                animationIterationCount: "infinite",
+                animationTimingFunction: "ease-in",
+                "--ember-drift": ember.drift,
+              } as React.CSSProperties
+            }
+          />
+        ))}
+      </div>
+
+      {/* Slow-twinkling constellation across the whole viewport */}
+      <div className="absolute inset-0 pointer-events-none">
+        {STARS.map((star, i) => (
+          <span
+            key={i}
+            className="absolute rounded-full bg-[#F4F0E8] shadow-[0_0_4px_1px_rgba(232,200,122,0.35)]"
+            style={{
+              top: star.top,
+              left: star.left,
+              width: `${star.size}px`,
+              height: `${star.size}px`,
+              animationName: "starTwinkle",
+              animationDuration: `${star.duration}s`,
+              animationDelay: `${star.delay}s`,
+              animationIterationCount: "infinite",
+              animationTimingFunction: "ease-in-out",
+            }}
+          />
+        ))}
+      </div>
 
       {/* Ambient Film Grain */}
       <div
@@ -193,12 +348,9 @@ export function Act08FinalScreen({ onBack }: Act08FinalScreenProps) {
 
       {!submitted ? (
         <div className="relative z-10 w-full max-w-2xl">
-          {/* Corner Ornaments */}
-          <CornerFrame />
-
-          <div className="relative px-8 sm:px-16 py-14 sm:py-20 rounded-xs bg-white/1.5 backdrop-blur-2xl shadow-[0_0_120px_rgba(201,165,90,0.08)]">
+          <div className="relative px-8 sm:px-16 py-14 sm:py-20">
             {/* Overtitle */}
-            <div className="flex flex-col items-center gap-6 mb-14">
+            <div ref={overtitleRef} className="flex flex-col items-center gap-6 mb-14">
               <SigilEmblem numeral={current.numeral} />
               <div className="flex items-center gap-4 opacity-80">
                 <span className="h-px w-10 bg-[#C9A55A]/50" />
@@ -230,8 +382,8 @@ export function Act08FinalScreen({ onBack }: Act08FinalScreenProps) {
                   onKeyDown={handleKeyDown}
                   placeholder={current.placeholder}
                   className={`peer w-full bg-transparent px-0 py-3 text-center font-[var(--font-cormorant)] italic text-2xl sm:text-3xl focus:outline-none transition-colors ${current.accent
-                      ? "text-[#C9A55A] placeholder:text-[#C9A55A]/25"
-                      : "text-[#F4F0E8] placeholder:text-[#F4F0E8]/20"
+                    ? "text-[#C9A55A] placeholder:text-[#C9A55A]/25"
+                    : "text-[#F4F0E8] placeholder:text-[#F4F0E8]/20"
                     }`}
                 />
                 {/* Baseline hairline + focus sweep */}
@@ -264,7 +416,7 @@ export function Act08FinalScreen({ onBack }: Act08FinalScreenProps) {
                 <button
                   type="button"
                   onClick={handleAdvance}
-                  className="group relative cursor-pointer px-10 py-3 rounded-full bg-white/3 text-[#F4F0E8] font-[var(--font-cormorant)] italic text-lg tracking-[0.45em] uppercase transition-all duration-700 hover:bg-[#C9A55A]/10 hover:text-[#C9A55A] hover:shadow-[0_0_35px_rgba(201,165,90,0.35)]"
+                  className="group relative cursor-pointer px-10 py-3 rounded-full bg-white/3 text-[#F4F0E8] font-[var(--font-cormorant)] italic text-lg tracking-[0.45em] uppercase transition-all duration-700 hover:bg-[#C9A55A]/10 hover:text-[#C9A55A] hover:shadow-[0_0_35px_rgba(201,165,90,0.35)] animate-[ctaBreathe_3.2s_ease-in-out_infinite]"
                 >
                   <span className="relative z-10 flex items-center gap-3 filter drop-shadow-[0_0_10px_rgba(201,165,90,0.4)]">
                     {step === 2 ? "Enter" : "Continue"}
@@ -282,16 +434,16 @@ export function Act08FinalScreen({ onBack }: Act08FinalScreenProps) {
                 <div key={i} className="flex items-center gap-4">
                   <span
                     className={`h-px transition-all duration-700 ${i <= step
-                        ? "w-14 bg-[#C9A55A] shadow-[0_0_10px_rgba(201,165,90,0.6)]"
-                        : "w-8 bg-[#F4F0E8]/15"
+                      ? "w-14 bg-[#C9A55A] shadow-[0_0_10px_rgba(201,165,90,0.6)]"
+                      : "w-8 bg-[#F4F0E8]/15"
                       }`}
                   />
                   <span
                     className={`text-[10px] font-mono tracking-[0.4em] transition-colors duration-500 ${i === step
-                        ? "text-[#C9A55A]"
-                        : i < step
-                          ? "text-[#C9A55A]/60"
-                          : "text-[#F4F0E8]/25"
+                      ? "text-[#C9A55A]"
+                      : i < step
+                        ? "text-[#C9A55A]/60"
+                        : "text-[#F4F0E8]/25"
                       }`}
                   >
                     0{i + 1}
@@ -303,28 +455,62 @@ export function Act08FinalScreen({ onBack }: Act08FinalScreenProps) {
         </div>
       ) : (
         /* Post-ENTER Final Story Confirmation Beat */
-        <div className="relative z-10 flex flex-col items-center justify-center text-center space-y-10 max-w-2xl animate-fade-in">
-          <div className="relative w-28 h-28 flex items-center justify-center">
-            <svg viewBox="0 0 160 160" className="w-full h-full filter drop-shadow-[0_0_20px_rgba(201,165,90,0.5)]">
-              <circle cx="80" cy="80" r="62" stroke="#C9A55A" strokeWidth="1.8" fill="none" />
-              <circle cx="80" cy="80" r="44" stroke="#C9A55A" strokeWidth="1.8" fill="none" />
+        <div className="relative z-10 flex flex-col items-center justify-center text-center space-y-10 max-w-2xl">
+          <div ref={ringWrapRef} className="relative w-36 h-36 sm:w-44 sm:h-44 flex items-center justify-center">
+            {/* OWN KARMA emblem — same lotus mandala + 8-point star from Act V */}
+            <svg
+              viewBox="130 30 160 160"
+              className="w-full h-full filter drop-shadow-[0_0_22px_rgba(201,165,90,0.55)]"
+              fill="none"
+            >
+              <path
+                ref={outerRingRef}
+                d="M 194.7,73 C 181.3,40.7 238.7,40.7 225.3,73 C 238.7,40.7 279.3,81.3 247,94.7 C 279.3,81.3 279.3,138.7 247,125.3 C 279.3,138.7 238.7,179.3 225.3,147 C 238.7,179.3 181.3,179.3 194.7,147 C 181.3,179.3 140.7,138.7 173,125.3 C 140.7,138.7 140.7,81.3 173,94.7 C 140.7,81.3 181.3,40.7 194.7,73 Z"
+                stroke="#C9A55A"
+                strokeWidth="1.8"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+              <path
+                ref={innerRingRef}
+                d="M 210,85 L 213.8,100.8 L 227.7,92.3 L 219.2,106.2 L 235,110 L 219.2,113.8 L 227.7,127.7 L 213.8,119.2 L 210,135 L 206.2,119.2 L 192.3,127.7 L 200.8,113.8 L 185,110 L 200.8,106.2 L 192.3,92.3 L 206.2,100.8 Z"
+                stroke="#C9A55A"
+                strokeWidth="1.6"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+            {/* Orbiting accent motes echoing the step sigil's rotation */}
+            <svg viewBox="0 0 160 160" className="absolute inset-0 w-full h-full animate-[spin_26s_linear_infinite] pointer-events-none">
+              <circle cx="80" cy="6" r="2.2" fill="#E8C87A" />
+            </svg>
+            <svg viewBox="0 0 160 160" className="absolute inset-0 w-full h-full animate-[spin_38s_linear_infinite_reverse] pointer-events-none">
+              <circle cx="80" cy="24" r="1.6" fill="#C9A55A" />
             </svg>
           </div>
 
           <div className="space-y-4">
-            <p className="font-[var(--font-cormorant)] italic text-[#F4F0E8] text-3xl sm:text-5xl font-light leading-relaxed">
+            <p ref={line1Ref} className="font-[var(--font-cormorant)] italic text-[#F4F0E8] text-3xl sm:text-5xl font-light leading-relaxed">
               &ldquo;Every choice creates a story. <br />
-              <span className="text-[#C9A55A]">This is yours.&rdquo;</span>
+              <span ref={line2Ref} className="text-[#C9A55A]">This is yours.&rdquo;</span>
             </p>
 
             {becoming && (
-              <p className="text-xs uppercase tracking-[0.4em] text-[#C9A55A]/80 font-mono pt-4">
+              <p ref={becomingRef} className="text-xs uppercase tracking-[0.4em] text-[#C9A55A]/80 font-mono pt-4">
                 Becoming: {becoming}
               </p>
             )}
           </div>
 
-          <h1 className="font-[var(--font-cormorant)] text-[#C9A55A] text-2xl tracking-[0.4em] uppercase font-light pt-6">
+          <h1
+            ref={wordmarkRef}
+            className="font-[var(--font-cormorant)] bg-clip-text text-transparent text-2xl tracking-[0.4em] uppercase font-light pt-6 animate-[shimmerSweep_4s_linear_infinite]"
+            style={{
+              backgroundImage:
+                "linear-gradient(90deg, #C9A55A 0%, #C9A55A 35%, #FFF3D6 50%, #C9A55A 65%, #C9A55A 100%)",
+              backgroundSize: "200% 100%",
+            }}
+          >
             OWN KARMA
           </h1>
         </div>
@@ -354,28 +540,5 @@ function SigilEmblem({ numeral }: { numeral: string }) {
         {numeral}
       </span>
     </div>
-  );
-}
-
-/** Four gold hairline brackets pinned to the panel corners. */
-function CornerFrame() {
-  const stroke = "#C9A55A";
-  return (
-    <>
-      {[
-        "top-0 left-0",
-        "top-0 right-0 rotate-90",
-        "bottom-0 right-0 rotate-180",
-        "bottom-0 left-0 -rotate-90",
-      ].map((pos, i) => (
-        <svg
-          key={i}
-          viewBox="0 0 40 40"
-          className={`pointer-events-none absolute ${pos} w-10 h-10`}
-        >
-          <path d="M0 20 L0 0 L20 0" stroke={stroke} strokeOpacity="0.65" strokeWidth="1" fill="none" />
-        </svg>
-      ))}
-    </>
   );
 }

@@ -71,7 +71,7 @@ export function Act05Realization({ onComplete, onBack, initialProgress = 0 }: Ac
           x,
           y,
           rotation: angleDeg,
-          transformOrigin: "0px 0px",
+          transformOrigin: "100% 50%",
           opacity: 1,
         });
       };
@@ -88,7 +88,7 @@ export function Act05Realization({ onComplete, onBack, initialProgress = 0 }: Ac
           y,
           rotation: faceAngle,
           duration,
-          ease: "none",
+          ease: "sine.inOut",
         });
       };
 
@@ -145,7 +145,7 @@ export function Act05Realization({ onComplete, onBack, initialProgress = 0 }: Ac
         x: 10,
         y: 110,
         rotation: 0,
-        transformOrigin: "0px 0px",
+        transformOrigin: "100% 50%",
       });
 
       const tl = gsap.timeline({ paused: true });
@@ -205,7 +205,7 @@ export function Act05Realization({ onComplete, onBack, initialProgress = 0 }: Ac
         rotation: 15,
         opacity: 0,
         duration: 0.5,
-        ease: "none",
+        ease: "sine.inOut",
       });
 
       // Gold Shimmer Sweep
@@ -232,7 +232,7 @@ export function Act05Realization({ onComplete, onBack, initialProgress = 0 }: Ac
 
       const diff = targetProgressRef.current - currentProgressRef.current;
       if (Math.abs(diff) > 0.0001) {
-        currentProgressRef.current += diff * 0.12;
+        currentProgressRef.current += diff * 0.06;
       } else {
         currentProgressRef.current = targetProgressRef.current;
       }
@@ -252,12 +252,12 @@ export function Act05Realization({ onComplete, onBack, initialProgress = 0 }: Ac
     };
   }, []);
 
-  // Automated progress timer (0 to 1 over 14s with auto transition on finish)
+  // Automated progress timer (0 to 1 over 22s with auto transition on finish)
   useEffect(() => {
     const progressObj = { value: 0 };
     const tween = gsap.to(progressObj, {
       value: 1,
-      duration: 14,
+      duration: 22,
       ease: "none",
       onUpdate: () => {
         if (targetProgressRef.current < progressObj.value) {

@@ -2,7 +2,7 @@
 
 :root {
   --ok-black: #000000;
-  --ok-gold: #c9a24b;
+  --ok-gold: #c9a55a;
   --ok-gold-hi: #e8c87a;
   --ok-ivory: #f4f0e8;
 }
@@ -73,6 +73,82 @@ html {
   }
   85% {
     opacity: 0.35;
+  }
+}
+
+/* Gold shimmer sweep across text (Act VIII wordmark) */
+@keyframes shimmerSweep {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+/* Slow ambient breathing glow behind the final sigil */
+@keyframes auraBreathe {
+  0%,
+  100% {
+    opacity: 0.55;
+    transform: translate(-50%, -50%) scale(1);
+  }
+  50% {
+    opacity: 0.9;
+    transform: translate(-50%, -50%) scale(1.15);
+  }
+}
+
+/* Drifting gold embers rising behind the Act VIII finale */
+@keyframes emberRise {
+  0% {
+    transform: translate(0, 0) scale(0.6);
+    opacity: 0;
+  }
+  15% {
+    opacity: 0.9;
+  }
+  85% {
+    opacity: 0.5;
+  }
+  100% {
+    transform: translate(var(--ember-drift, 12px), -180px) scale(1);
+    opacity: 0;
+  }
+}
+
+/* Slow breathing glow around the Act VIII wizard panel */
+@keyframes panelGlow {
+  0%,
+  100% {
+    box-shadow: 0 0 90px rgba(201, 165, 90, 0.06);
+  }
+  50% {
+    box-shadow: 0 0 150px rgba(201, 165, 90, 0.14);
+  }
+}
+
+/* Gentle scatter of ambient stars twinkling in and out across the viewport */
+@keyframes starTwinkle {
+  0%,
+  100% {
+    opacity: 0.12;
+    transform: scale(0.7);
+  }
+  50% {
+    opacity: 0.9;
+    transform: scale(1);
+  }
+}
+
+/* Gentle idle pulse inviting a click on the primary CTA */
+@keyframes ctaBreathe {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.02);
   }
 }
 

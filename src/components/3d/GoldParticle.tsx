@@ -62,7 +62,7 @@ export const GoldParticle = forwardRef<THREE.Mesh, GoldParticleProps>(
 
         return (
             <mesh ref={localMeshRef}>
-                <planeGeometry args={[1.0, 1.0]} />
+                <planeGeometry args={[0.6, 0.6]} />
                 <shaderMaterial
                     ref={localMaterialRef}
                     vertexShader={particleVertex}
