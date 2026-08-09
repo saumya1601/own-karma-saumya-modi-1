@@ -51,7 +51,6 @@ export function Act07Community({
   const targetProgressRef = useRef<number>(initialProgress);
   const currentProgressRef = useRef<number>(initialProgress);
 
-  const [progress, setProgress] = useState<number>(initialProgress);
   const [canClick, setCanClick] = useState<boolean>(initialProgress >= 1);
   const [overlayOpacity, setOverlayOpacity] = useState<number>(1);
 
@@ -86,7 +85,7 @@ export function Act07Community({
     const handleWheel = (e: WheelEvent) => {
       if (e.deltaY < -20 && onBack) {
         triggerBack();
-      } else if (e.deltaY > 20 && progress >= 0.95) {
+      } else if (e.deltaY > 20 && targetProgressRef.current >= 0.95) {
         triggerComplete();
       }
     };
@@ -94,7 +93,7 @@ export function Act07Community({
     const handleKeyDown = (e: KeyboardEvent) => {
       if ((e.key === "Escape" || e.key === "ArrowUp") && onBack) {
         triggerBack();
-      } else if ((e.key === "ArrowDown" || e.key === "Enter" || e.key === " ") && progress >= 0.95) {
+      } else if ((e.key === "ArrowDown" || e.key === "Enter" || e.key === " ") && targetProgressRef.current >= 0.95) {
         triggerComplete();
       }
     };
@@ -108,7 +107,7 @@ export function Act07Community({
       const diffY = startY - e.touches[0].clientY;
       if (diffY < -40 && onBack) {
         triggerBack();
-      } else if (diffY > 40 && progress >= 0.95) {
+      } else if (diffY > 40 && targetProgressRef.current >= 0.95) {
         triggerComplete();
       }
     };
@@ -124,9 +123,9 @@ export function Act07Community({
       window.removeEventListener("touchstart", handleTouchStart);
       window.removeEventListener("touchmove", handleTouchMove);
     };
-  }, [onBack, progress, triggerBack, triggerComplete]);
+  }, [onBack, triggerBack, triggerComplete]);
 
-  // Automated particle assembly timeline (0 to 1 over 40 seconds with auto transition on finish).
+  // Automated particle assembly timeline (0 to 1 over ~23 seconds with auto transition on finish).
   // Skipped entirely when arriving backward from Act VIII — the phrase is
   // already fully assembled, so it should hold there rather than replay.
   useEffect(() => {
@@ -135,11 +134,10 @@ export function Act07Community({
     const progressObj = { value: 0 };
     const tween = gsap.to(progressObj, {
       value: 1,
-      duration: 40,
+      duration: 22.8,
       ease: "none",
       onUpdate: () => {
         targetProgressRef.current = progressObj.value;
-        setProgress(progressObj.value);
       },
       onComplete: () => {
         if (!transitionFiredRef.current) {
@@ -223,7 +221,17 @@ export function Act07Community({
     const fontSize3 = width < 640 ? 32 : width < 1024 ? 54 : 68;
     const pts3 = sampleTextPoints(["THE KARMA COMMUNITY"], fontSize3, false);
 
-    const particleCount = 5000;
+    const particleCount = 3000;
+
+    // When a phrase has more sampled pixels than particles, stride evenly across
+    // the whole point set instead of `idx % length`, which would only ever cover
+    // the first `particleCount` pixels (top rows) and crop the rest of the text.
+    const pickPoint = (pts: Point[], idx: number, fallback: Point): Point => {
+      if (pts.length === 0) return fallback;
+      if (pts.length <= particleCount) return pts[idx % pts.length];
+      return pts[Math.floor((idx / particleCount) * pts.length)];
+    };
+
     const particles: Particle[] = Array.from({ length: particleCount }).map((_, idx) => {
       const angle = Math.random() * Math.PI * 2;
       const distance = Math.random() * Math.max(width, height) * 0.75 + 200;
@@ -232,80 +240,100 @@ export function Act07Community({
         y: height / 2 + Math.sin(angle) * distance,
       };
 
-      const p1Pt = pts1.length > 0 ? pts1[idx % pts1.length] : scatterPt;
-      const p2Pt = pts2.length > 0 ? pts2[idx % pts2.length] : scatterPt;
-      const p3Pt = pts3.length > 0 ? pts3[idx % pts3.length] : scatterPt;
-
       return {
         x: scatterPt.x,
         y: scatterPt.y,
         targetX: scatterPt.x,
         targetY: scatterPt.y,
-        p1: p1Pt,
-        p2: p2Pt,
-        p3: p3Pt,
+        p1: pickPoint(pts1, idx, scatterPt),
+        p2: pickPoint(pts2, idx, scatterPt),
+        p3: pickPoint(pts3, idx, scatterPt),
         scatter: scatterPt,
         radius: Math.random() * 1.1 + 0.6,
         alpha: Math.random() * 0.6 + 0.4,
       };
     });
 
-    const interpolatePoint = (pA: Point, pB: Point, t: number): Point => ({
-      x: pA.x + (pB.x - pA.x) * t,
-      y: pA.y + (pB.y - pA.y) * t,
-    });
+    let lastFrameTime = performance.now();
 
     const render = () => {
+      const now = performance.now();
+      // Normalize smoothing to elapsed time (not frame count) so convergence speed
+      // stays consistent even when the frame rate dips — otherwise particles fall
+      // behind their targets under load and the phrase never fully assembles before
+      // the timeline moves on to the next scatter/reform cycle.
+      const frameFactor = Math.min(now - lastFrameTime, 100) / 16.6667;
+      lastFrameTime = now;
+
       ctx.clearRect(0, 0, width, height);
 
-      // Lerp smooth automated progress
+      const progressLerp = 1 - Math.pow(1 - 0.12, frameFactor);
+      const posLerp = 1 - Math.pow(1 - 0.08, frameFactor);
+
       const diff = targetProgressRef.current - currentProgressRef.current;
       if (Math.abs(diff) > 0.0001) {
-        currentProgressRef.current += diff * 0.12;
+        currentProgressRef.current += diff * progressLerp;
       } else {
         currentProgressRef.current = targetProgressRef.current;
       }
 
       const p = Math.min(1, Math.max(0, currentProgressRef.current));
-      setCanClick(p >= 0.7);
+      // 0.87 must match the form-3 boundary below — clickable once phrase 3 finishes assembling.
+      setCanClick(p >= 0.87);
 
       const mx = mouseRef.current.x;
       const my = mouseRef.current.y;
       const isMouseActive = mouseRef.current.active;
 
-      particles.forEach((part) => {
-        let tPt: Point;
+      ctx.fillStyle = "#C9A55A";
 
-        if (p <= 0.08) {
-          const t = p / 0.08;
-          tPt = interpolatePoint(part.scatter, part.p1, t);
-        } else if (p <= 0.25) {
-          tPt = part.p1;
-        } else if (p <= 0.30) {
-          const t = (p - 0.25) / 0.05;
-          tPt = interpolatePoint(part.p1, part.scatter, t);
-        } else if (p <= 0.38) {
-          const t = (p - 0.30) / 0.08;
-          tPt = interpolatePoint(part.scatter, part.p2, t);
-        } else if (p <= 0.58) {
-          tPt = part.p2;
-        } else if (p <= 0.63) {
-          const t = (p - 0.58) / 0.05;
-          tPt = interpolatePoint(part.p2, part.scatter, t);
-        } else if (p <= 0.70) {
-          const t = (p - 0.63) / 0.07;
-          tPt = interpolatePoint(part.scatter, part.p3, t);
+      particles.forEach((part) => {
+        let tx: number;
+        let ty: number;
+
+        // Boundaries below are tuned in absolute seconds against the ~23s timeline
+        // above. Phrase 3's hold (the "else" branch, ~3s) is intentionally short —
+        // once the final phrase finishes assembling, the automated timeline (and
+        // the onComplete callback above) moves straight into Act VIII rather than
+        // sitting on screen.
+        if (p <= 0.13) {
+          const t = p / 0.13;
+          tx = part.scatter.x + (part.p1.x - part.scatter.x) * t;
+          ty = part.scatter.y + (part.p1.y - part.scatter.y) * t;
+        } else if (p <= 0.26) {
+          tx = part.p1.x;
+          ty = part.p1.y;
+        } else if (p <= 0.35) {
+          const t = (p - 0.26) / 0.09;
+          tx = part.p1.x + (part.scatter.x - part.p1.x) * t;
+          ty = part.p1.y + (part.scatter.y - part.p1.y) * t;
+        } else if (p <= 0.48) {
+          const t = (p - 0.35) / 0.13;
+          tx = part.scatter.x + (part.p2.x - part.scatter.x) * t;
+          ty = part.scatter.y + (part.p2.y - part.scatter.y) * t;
+        } else if (p <= 0.66) {
+          tx = part.p2.x;
+          ty = part.p2.y;
+        } else if (p <= 0.75) {
+          const t = (p - 0.66) / 0.09;
+          tx = part.p2.x + (part.scatter.x - part.p2.x) * t;
+          ty = part.p2.y + (part.scatter.y - part.p2.y) * t;
+        } else if (p <= 0.87) {
+          const t = (p - 0.75) / 0.12;
+          tx = part.scatter.x + (part.p3.x - part.scatter.x) * t;
+          ty = part.scatter.y + (part.p3.y - part.scatter.y) * t;
         } else {
-          tPt = part.p3;
+          tx = part.p3.x;
+          ty = part.p3.y;
         }
 
-        part.targetX = tPt.x;
-        part.targetY = tPt.y;
+        part.targetX = tx;
+        part.targetY = ty;
 
-        part.x += (part.targetX - part.x) * 0.08;
-        part.y += (part.targetY - part.y) * 0.08;
+        part.x += (part.targetX - part.x) * posLerp;
+        part.y += (part.targetY - part.y) * posLerp;
 
-        if (isMouseActive && p >= 0.7) {
+        if (isMouseActive) {
           const dx = part.x - mx;
           const dy = part.y - my;
           const dist = Math.sqrt(dx * dx + dy * dy);
@@ -319,13 +347,21 @@ export function Act07Community({
           }
         }
 
+        // Two flat circles (soft halo + bright core) instead of ctx.shadowBlur —
+        // shadowBlur re-blurs every shape on every draw call and made 5,000 particles
+        // per frame unaffordable (this was the main cause of the RAM/CPU spike and jitter).
+        ctx.globalAlpha = part.alpha * 0.18;
+        ctx.beginPath();
+        ctx.arc(part.x, part.y, part.radius * 2.4, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.globalAlpha = part.alpha;
         ctx.beginPath();
         ctx.arc(part.x, part.y, part.radius, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(201, 165, 90, ${part.alpha})`;
-        ctx.shadowColor = "#C9A55A";
-        ctx.shadowBlur = 4;
         ctx.fill();
       });
+
+      ctx.globalAlpha = 1;
 
       animationFrameId = requestAnimationFrame(render);
     };
@@ -366,19 +402,6 @@ export function Act07Community({
     >
       {/* Pure Gold Particle Canvas */}
       <canvas ref={canvasRef} className="absolute inset-0 w-full h-full pointer-events-none z-10" />
-
-      {/* Fixed Bottom Action Button */}
-      <div className="fixed bottom-10 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 z-30 pointer-events-none">
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            triggerComplete();
-          }}
-          className="pointer-events-auto px-8 py-3 rounded-full bg-black/70 text-[#C9A55A] font-[var(--font-cormorant)] italic text-lg tracking-[0.3em] uppercase border border-[#C9A55A]/50 transition-all duration-500 hover:border-[#C9A55A] hover:bg-[#C9A55A]/20 hover:shadow-[0_0_25px_rgba(201,165,90,0.4)] cursor-pointer"
-        >
-          Enter The Final Screen →
-        </button>
-      </div>
 
       {/* Smooth Curtain Fade Overlay for Transitions */}
       <div
