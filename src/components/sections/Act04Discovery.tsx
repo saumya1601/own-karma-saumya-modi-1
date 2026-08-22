@@ -164,14 +164,12 @@ function AmbientGoldCanvas() {
  */
 function StaggeredRoomText({
   room,
-  isActive,
+  isVisible,
 }: {
   room: (typeof ROOMS)[0];
-  isActive: boolean;
+  isVisible: boolean;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const tagRef = useRef<HTMLDivElement>(null);
-  const lineRef = useRef<HTMLDivElement>(null);
   const quoteRef = useRef<HTMLDivElement>(null);
   const charSpanRefs = useRef<(HTMLSpanElement | null)[]>([]);
 
@@ -200,22 +198,18 @@ function StaggeredRoomText({
 
   // Character-by-character GSAP stagger animation
   useEffect(() => {
-    const tag = tagRef.current;
-    const line = lineRef.current;
     const quote = quoteRef.current;
     const chars = charSpanRefs.current.filter(
       (c): c is HTMLSpanElement => c !== null
     );
 
-    if (!tag || !line || !quote || chars.length === 0) return;
+    if (!quote || chars.length === 0) return;
 
     const ctx = gsap.context(() => {
-      if (isActive) {
+      if (isVisible) {
         const tl = gsap.timeline({ defaults: { ease: "power3.out" } });
 
         // Reset initial states
-        gsap.set(tag, { opacity: 0, y: -20, filter: "blur(8px)" });
-        gsap.set(line, { scaleX: 0, opacity: 0 });
         gsap.set(quote, { opacity: 1 });
         gsap.set(chars, {
           opacity: 0,
@@ -226,44 +220,20 @@ function StaggeredRoomText({
           scale: 1.25,
         });
 
-        // 1. Reveal Room Header Tag (e.g. ROOM ONE • SILENCE)
-        tl.to(tag, {
+        // Staggered character 3D entrance
+        tl.to(chars, {
           opacity: 1,
           y: 0,
+          rotateX: 0,
+          rotateY: 0,
           filter: "blur(0px)",
-          duration: 0.9,
+          scale: 1,
+          duration: 1.1,
+          stagger: 0.035,
+          ease: "back.out(1.4)",
         });
 
-        // 2. Expand Gold Hairline Line
-        tl.to(
-          line,
-          {
-            scaleX: 1,
-            opacity: 1,
-            duration: 0.8,
-            ease: "expo.out",
-          },
-          "-=0.5"
-        );
-
-        // 3. Staggered character 3D entrance
-        tl.to(
-          chars,
-          {
-            opacity: 1,
-            y: 0,
-            rotateX: 0,
-            rotateY: 0,
-            filter: "blur(0px)",
-            scale: 1,
-            duration: 1.1,
-            stagger: 0.035,
-            ease: "back.out(1.4)",
-          },
-          "-=0.4"
-        );
-
-        // 4. Living floating sine wave breath per letter
+        // Living floating sine wave breath per letter
         chars.forEach((char, i) => {
           gsap.to(char, {
             y: i % 2 === 0 ? -4 : 4,
@@ -275,18 +245,17 @@ function StaggeredRoomText({
           });
         });
       } else {
-        gsap.to([tag, line, ...chars], {
+        gsap.set(chars, {
           opacity: 0,
-          y: -20,
-          filter: "blur(10px)",
-          duration: 0.6,
-          ease: "power2.in",
+          y: 40,
+          filter: "blur(14px)",
         });
+        gsap.set(quote, { opacity: 0 });
       }
     });
 
     return () => ctx.revert();
-  }, [isActive]);
+  }, [isVisible]);
 
   // Split into words so each word never breaks mid-letter, while still
   // exposing every character to the per-letter GSAP stagger.
@@ -301,36 +270,18 @@ function StaggeredRoomText({
   return (
     <div
       ref={containerRef}
-      className="relative z-20 max-w-5xl px-6 flex flex-col items-center select-none transform-preserve-3d"
+      className={`relative z-20 max-w-5xl px-6 flex flex-col items-center select-none transform-preserve-3d transition-opacity duration-700 ${
+        isVisible ? "opacity-100" : "opacity-0 pointer-events-none"
+      }`}
       aria-label={room.name}
     >
       {/* Subtle luxury radial background backdrop behind text */}
       <div className="absolute -inset-10 bg-radial from-black/80 via-black/40 to-transparent blur-3xl pointer-events-none rounded-full" />
 
-      {/* Room Category Tag (e.g. ROOM ONE • SILENCE) */}
-      <div
-        ref={tagRef}
-        className="relative z-10 flex items-center gap-3 mb-4 opacity-0"
-      >
-        <span className="font-mono text-xs sm:text-sm tracking-[0.45em] uppercase text-[#C9A55A]/90 font-light">
-          {room.tag}
-        </span>
-        <span className="w-1.5 h-1.5 rounded-full bg-[#C9A55A] shadow-[0_0_8px_#C9A55A]" />
-        <span className="font-mono text-xs sm:text-sm tracking-[0.45em] uppercase text-[#F4F0E8]/80 font-light">
-          {room.name}
-        </span>
-      </div>
-
-      {/* Gold hairline accent line */}
-      <div
-        ref={lineRef}
-        className="relative z-10 w-36 h-[1px] mb-8 bg-gradient-to-r from-transparent via-[#C9A55A] to-transparent origin-center opacity-0 shadow-[0_0_12px_rgba(201,165,90,0.8)]"
-      />
-
       {/* Main Quote with Letter-by-Letter 3D Stagger */}
       <div
         ref={quoteRef}
-        className="relative z-10 text-center leading-tight tracking-wide"
+        className="relative z-10 text-center leading-tight tracking-wide opacity-0"
         style={{
           fontFamily:
             "var(--font-cormorant), 'Cormorant Garamond', Georgia, serif",
@@ -348,7 +299,7 @@ function StaggeredRoomText({
                       ref={(el) => {
                         charSpanRefs.current[globalIdx] = el;
                       }}
-                      className="inline-block transform-preserve-3d bg-gradient-to-b from-[#FFFDF9] via-[#F4F0E8] to-[#D9C496] bg-clip-text text-transparent"
+                      className="inline-block transform-preserve-3d bg-gradient-to-b from-[#FFFDF9] via-[#F4F0E8] to-[#D9C496] bg-clip-text text-transparent opacity-0"
                       style={{
                         willChange: "transform, opacity, filter",
                       }}
@@ -382,6 +333,7 @@ export function Act04Discovery({
   const roomRefs = useRef<(HTMLElement | null)[]>([]);
   const videoRefs = useRef<(HTMLVideoElement | null)[]>([]);
   const [currentRoomIndex, setCurrentRoomIndex] = useState(0);
+  const [room1TextVisible, setRoom1TextVisible] = useState(false);
   const transitionFiredRef = useRef(false);
 
   // IntersectionObserver to detect active room with high accuracy
@@ -407,6 +359,22 @@ export function Act04Discovery({
     return () => observer.disconnect();
   }, []);
 
+  // Room 1 text visibility reset / fallback
+  useEffect(() => {
+    if (currentRoomIndex === 0) {
+      const v = videoRefs.current[0];
+      if (v && v.currentTime >= 3.8) {
+        setRoom1TextVisible(true);
+      }
+      const fallbackTimer = setTimeout(() => {
+        setRoom1TextVisible(true);
+      }, 4500);
+      return () => clearTimeout(fallbackTimer);
+    } else {
+      setRoom1TextVisible(false);
+    }
+  }, [currentRoomIndex]);
+
   // Scroll & video control handler
   useEffect(() => {
     const container = containerRef.current;
@@ -431,6 +399,9 @@ export function Act04Discovery({
       videoRefs.current.forEach((v, idx) => {
         if (!v) return;
         if (idx === roomIdx) {
+          if (v.ended) {
+            v.currentTime = 0;
+          }
           if (v.paused) v.play().catch(() => { });
         } else {
           if (!v.paused) v.pause();
@@ -514,6 +485,11 @@ export function Act04Discovery({
             autoPlay
             muted
             playsInline
+            onTimeUpdate={(e) => {
+              if (idx === 0 && e.currentTarget.currentTime >= 3.8) {
+                setRoom1TextVisible(true);
+              }
+            }}
             onEnded={() => {
               if (idx < ROOMS.length - 1) {
                 containerRef.current?.scrollTo({
@@ -533,7 +509,10 @@ export function Act04Discovery({
           <div className="absolute inset-0 bg-radial from-transparent via-black/30 to-black/90 pointer-events-none z-5" />
 
           {/* Room Motion Typography Content */}
-          <StaggeredRoomText room={room} isActive={idx === currentRoomIndex} />
+          <StaggeredRoomText
+            room={room}
+            isVisible={idx === 0 ? (currentRoomIndex === 0 && room1TextVisible) : idx === currentRoomIndex}
+          />
         </section>
       ))}
     </div>
