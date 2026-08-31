@@ -23,16 +23,18 @@ const QUESTIONS = [
 const TIMING = {
   charFadeDuration: 0.7,
   charStagger: 0.12,
+  baseHoldSeconds: 1.8,
+  perCharHoldSeconds: 0.07,
   fadeOutDuration: 1.2,
-  gapBetweenLines: 0.9,
-  gapAfterPair: 1.5,
-  holdSeconds: 1.6,
+  gapBetweenLines: 1.0,
+  gapAfterPair: 1.8,
   blackSilenceDuration: 5.0,
   heartbeatInDuration: 0.35,
   heartbeatOutDuration: 1.4,
   finalSilenceDuration: 0.6,
   reducedMotion: {
-    holdDuration: 2.5,
+    baseHoldSeconds: 2.2,
+    perCharHoldSeconds: 0.05,
     fadeOutDuration: 1.0,
   },
 } as const;
@@ -41,8 +43,10 @@ const TIMING = {
  * ACT II — "The Questions"
  *
  * Still black. One sentence at a time, revealed letter-by-letter in a large
- * ivory serif. After the six lines fade, five seconds of silence, then a
- * single heartbeat, then the screen "opens" into Act III.
+ * ivory serif. Longer sentences are dynamically allocated proportionally
+ * more reading time based on character count so they never fade too early.
+ * After the six lines fade, five seconds of silence, then a single heartbeat,
+ * then the screen "opens" into Act III.
  *
  * Spec: _documents/OWN_KARMA_Landing_Page_Experience_Spec.md — ACT II.
  */
@@ -87,10 +91,16 @@ export function Act02Questions({ onComplete }: Act02QuestionsProps) {
         );
         if (chars.length === 0) return;
 
+        const charCount = chars.length;
+
         if (prefersReducedMotion) {
+          const holdDuration =
+            TIMING.reducedMotion.baseHoldSeconds +
+            charCount * TIMING.reducedMotion.perCharHoldSeconds;
+
           tl.set(el, { opacity: 1 }, cursor)
             .set(chars, { opacity: 1, y: 0 }, cursor);
-          cursor += TIMING.reducedMotion.holdDuration;
+          cursor += holdDuration;
           tl.to(
             el,
             { opacity: 0, duration: TIMING.reducedMotion.fadeOutDuration },
@@ -118,10 +128,13 @@ export function Act02Questions({ onComplete }: Act02QuestionsProps) {
           );
 
           // 3. Advance cursor past the last letter's transition end.
-          cursor += (chars.length - 1) * TIMING.charStagger + TIMING.charFadeDuration;
+          cursor += (charCount - 1) * TIMING.charStagger + TIMING.charFadeDuration;
 
-          // 4. Post-reveal hold beat.
-          cursor += TIMING.holdSeconds;
+          // 4. Post-reveal hold beat scaled accurately to character count so
+          //    longer questions remain on screen for ample reading/reflection time.
+          const holdDuration =
+            TIMING.baseHoldSeconds + charCount * TIMING.perCharHoldSeconds;
+          cursor += holdDuration;
 
           // 5. Whole line dissolves together (parent opacity).
           tl.to(

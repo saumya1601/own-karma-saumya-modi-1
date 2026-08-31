@@ -31,11 +31,13 @@ type Phase =
 // for a few hundred ms after the gesture ends, which — without a lock that
 // survives the remount — was tripping the *next* act's threshold too and
 // skipping straight through it.
-const TRANSITION_LOCK_MS = 900;
-const OVERLAY_FADE_MS = 650;
+const TRANSITION_LOCK_MS = 650;
+const OVERLAY_FADE_MS = 420;
 
 export default function Home() {
   const [phase, setPhase] = useState<Phase>("void");
+  const [dissolvingPhase, setDissolvingPhase] = useState<Phase | null>(null);
+  const [dissolveOpacity, setDissolveOpacity] = useState<number>(1);
   const [direction, setDirection] = useState<"forward" | "backward">("forward");
   const overlayRef = useRef<HTMLDivElement>(null);
   const lockedRef = useRef(false);
@@ -76,9 +78,27 @@ export default function Home() {
     if (lockedRef.current) return;
     lockedRef.current = true;
 
+    // True cinematic cross-dissolve when transitioning from corridor to discovery
+    if (phase === "corridor" && nextPhase === "discovery" && dir === "forward") {
+      setDissolvingPhase("corridor");
+      setDissolveOpacity(1);
+      setDirection(dir);
+      setPhase(nextPhase);
+
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          setDissolveOpacity(0);
+        });
+      });
+
+      window.setTimeout(() => {
+        setDissolvingPhase(null);
+        lockedRef.current = false;
+      }, 1200);
+      return;
+    }
+
     const overlay = overlayRef.current;
-    // Snap to fully opaque with no transition so it covers the outgoing
-    // frame before React swaps the tree underneath it.
     if (overlay) {
       overlay.style.transition = "none";
       overlay.style.opacity = "1";
@@ -137,13 +157,24 @@ export default function Home() {
       )}
 
       {/* ACT III: The Corridor */}
-      {phase === "corridor" && (
-        <Act03Corridor
-          key={`corridor-${direction}`}
-          initialProgress={initialProgress}
-          onComplete={() => goToNext("discovery")}
-          onBack={() => goToPrev("questions")}
-        />
+      {(phase === "corridor" || dissolvingPhase === "corridor") && (
+        <div
+          className={
+            dissolvingPhase === "corridor"
+              ? "fixed inset-0 z-20 pointer-events-none transition-opacity duration-1000 ease-out"
+              : "fixed inset-0 z-10"
+          }
+          style={{
+            opacity: dissolvingPhase === "corridor" ? dissolveOpacity : 1,
+          }}
+        >
+          <Act03Corridor
+            key={`corridor-${direction}`}
+            initialProgress={initialProgress}
+            onComplete={() => goToNext("discovery")}
+            onBack={() => goToPrev("questions")}
+          />
+        </div>
       )}
 
       {/* ACT IV: The Discovery */}

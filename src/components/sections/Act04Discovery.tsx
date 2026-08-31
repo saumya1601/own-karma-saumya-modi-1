@@ -44,7 +44,7 @@ const ROOMS = [
 ];
 
 /**
- * Interactive HTML5 Gold Dust & Ambient Ripple Canvas overlay
+ * Interactive HTML5 Celestial Star Glint & Ambient Gold Dust Canvas overlay
  */
 function AmbientGoldCanvas() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -56,34 +56,52 @@ function AmbientGoldCanvas() {
     if (!ctx) return;
 
     let animId: number;
-    let width = (canvas.width = window.innerWidth);
-    let height = (canvas.height = window.innerHeight);
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    let width = (canvas.width = window.innerWidth * dpr);
+    let height = (canvas.height = window.innerHeight * dpr);
+    canvas.style.width = `${window.innerWidth}px`;
+    canvas.style.height = `${window.innerHeight}px`;
 
     const handleResize = () => {
       if (!canvas) return;
-      width = canvas.width = window.innerWidth;
-      height = canvas.height = window.innerHeight;
+      width = canvas.width = window.innerWidth * dpr;
+      height = canvas.height = window.innerHeight * dpr;
+      canvas.style.width = `${window.innerWidth}px`;
+      canvas.style.height = `${window.innerHeight}px`;
     };
     window.addEventListener("resize", handleResize);
 
-    // Particle pool
-    const numParticles = 45;
-    const particles = Array.from({ length: numParticles }, () => ({
+    // Optical Star Glints (Telescope 4-point diffraction spikes matching Act III)
+    const glints = Array.from({ length: 14 }, () => ({
       x: Math.random() * width,
       y: Math.random() * height,
-      size: Math.random() * 2 + 0.8,
-      speedX: (Math.random() - 0.5) * 0.35,
-      speedY: -Math.random() * 0.4 - 0.15,
-      alpha: Math.random() * 0.6 + 0.2,
-      maxAlpha: Math.random() * 0.7 + 0.3,
-      pulseSpeed: Math.random() * 0.02 + 0.005,
+      size: (Math.random() * 2.2 + 1.0) * dpr,
+      spikeLen: (Math.random() * 10 + 5) * dpr,
+      alpha: Math.random() * 0.35 + 0.15,
+      pulse: Math.random() * Math.PI * 2,
+      pulseSpeed: Math.random() * 0.025 + 0.01,
+      driftX: (Math.random() - 0.5) * 0.15 * dpr,
+      driftY: (Math.random() - 0.5) * 0.15 * dpr,
+    }));
+
+    // Micro Gold Dust Particles
+    const numDust = 45;
+    const dust = Array.from({ length: numDust }, () => ({
+      x: Math.random() * width,
+      y: Math.random() * height,
+      radius: (Math.random() * 1.5 + 0.5) * dpr,
+      speedX: (Math.random() - 0.5) * 0.3 * dpr,
+      speedY: -Math.random() * 0.35 * dpr - 0.1 * dpr,
+      alpha: Math.random() * 0.5 + 0.2,
+      pulse: Math.random() * Math.PI * 2,
+      pulseSpeed: Math.random() * 0.02 + 0.008,
     }));
 
     let mouseX = width / 2;
     let mouseY = height / 2;
     const handleMouseMove = (e: MouseEvent) => {
-      mouseX = e.clientX;
-      mouseY = e.clientY;
+      mouseX = e.clientX * dpr;
+      mouseY = e.clientY * dpr;
     };
     window.addEventListener("mousemove", handleMouseMove);
 
@@ -91,52 +109,70 @@ function AmbientGoldCanvas() {
       ctx.clearRect(0, 0, width, height);
 
       // Subtle mouse aura glow
-      const grad = ctx.createRadialGradient(
+      const aura = ctx.createRadialGradient(
         mouseX,
         mouseY,
         0,
         mouseX,
         mouseY,
-        280
+        300 * dpr
       );
-      grad.addColorStop(0, "rgba(201, 165, 90, 0.06)");
-      grad.addColorStop(1, "rgba(0, 0, 0, 0)");
-      ctx.fillStyle = grad;
+      aura.addColorStop(0, "rgba(201, 165, 90, 0.05)");
+      aura.addColorStop(0.5, "rgba(100, 149, 237, 0.015)");
+      aura.addColorStop(1, "rgba(0, 0, 0, 0)");
+      ctx.fillStyle = aura;
       ctx.fillRect(0, 0, width, height);
 
-      // Render gold particles
-      particles.forEach((p) => {
+      // Render Optical Star Glints
+      glints.forEach((g) => {
+        g.pulse += g.pulseSpeed;
+        g.x += g.driftX;
+        g.y += g.driftY;
+
+        if (g.x < 0) g.x = width;
+        if (g.x > width) g.x = 0;
+        if (g.y < 0) g.y = height;
+        if (g.y > height) g.y = 0;
+
+        const currentAlpha = g.alpha * (0.6 + 0.4 * Math.sin(g.pulse));
+        const curSpike = g.spikeLen * (0.8 + 0.2 * Math.sin(g.pulse));
+
+        // Core
+        ctx.beginPath();
+        ctx.arc(g.x, g.y, g.size, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(255, 255, 255, ${currentAlpha})`;
+        ctx.fill();
+
+        // 4-Point Diffraction Cross Spikes
+        ctx.strokeStyle = `rgba(244, 240, 232, ${currentAlpha * 0.6})`;
+        ctx.lineWidth = 1 * dpr;
+        ctx.beginPath();
+        ctx.moveTo(g.x - curSpike, g.y);
+        ctx.lineTo(g.x + curSpike, g.y);
+        ctx.moveTo(g.x, g.y - curSpike);
+        ctx.lineTo(g.x + curSpike, g.y);
+        ctx.stroke();
+      });
+
+      // Render Micro Gold Dust
+      dust.forEach((p) => {
         p.x += p.speedX;
         p.y += p.speedY;
+        p.pulse += p.pulseSpeed;
 
-        // Soft pulse alpha
-        p.alpha += p.pulseSpeed;
-        if (p.alpha > p.maxAlpha || p.alpha < 0.1) {
-          p.pulseSpeed = -p.pulseSpeed;
-        }
-
-        // Mouse magnetic drift
-        const dx = mouseX - p.x;
-        const dy = mouseY - p.y;
-        const dist = Math.sqrt(dx * dx + dy * dy);
-        if (dist < 180) {
-          p.x += (dx / dist) * 0.3;
-          p.y += (dy / dist) * 0.3;
-        }
-
-        // Screen wrap
         if (p.y < -10) p.y = height + 10;
         if (p.x < -10) p.x = width + 10;
         if (p.x > width + 10) p.x = -10;
 
-        ctx.save();
+        const currentAlpha = p.alpha * (0.7 + 0.3 * Math.sin(p.pulse));
+
         ctx.beginPath();
-        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(229, 193, 112, ${Math.max(0, p.alpha)})`;
-        ctx.shadowColor = "#C9A55A";
-        ctx.shadowBlur = 8;
+        ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(201, 165, 90, ${currentAlpha})`;
+        ctx.shadowColor = "rgba(201, 165, 90, 0.4)";
+        ctx.shadowBlur = 5 * dpr;
         ctx.fill();
-        ctx.restore();
+        ctx.shadowBlur = 0;
       });
 
       animId = requestAnimationFrame(render);
@@ -278,6 +314,15 @@ function StaggeredRoomText({
       {/* Subtle luxury radial background backdrop behind text */}
       <div className="absolute -inset-10 bg-radial from-black/80 via-black/40 to-transparent blur-3xl pointer-events-none rounded-full" />
 
+      {/* Subtle Room Tag Indicator */}
+      <div className="relative z-10 mb-6 flex items-center gap-3 opacity-85">
+        <span className="h-[1px] w-6 bg-gradient-to-r from-transparent to-[#C9A55A]" />
+        <span className="text-[11px] sm:text-xs tracking-[0.35em] text-[#C9A55A] font-sans uppercase font-medium">
+          {room.tag} &bull; {room.name}
+        </span>
+        <span className="h-[1px] w-6 bg-gradient-to-l from-transparent to-[#C9A55A]" />
+      </div>
+
       {/* Main Quote with Letter-by-Letter 3D Stagger */}
       <div
         ref={quoteRef}
@@ -335,6 +380,15 @@ export function Act04Discovery({
   const [currentRoomIndex, setCurrentRoomIndex] = useState(0);
   const [room1TextVisible, setRoom1TextVisible] = useState(false);
   const transitionFiredRef = useRef(false);
+  const isScrollLockedRef = useRef(true);
+
+  // Guard against scroll inertia from previous act for the first 500ms
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      isScrollLockedRef.current = false;
+    }, 500);
+    return () => clearTimeout(timer);
+  }, []);
 
   // IntersectionObserver to detect active room with high accuracy
   useEffect(() => {
@@ -359,23 +413,23 @@ export function Act04Discovery({
     return () => observer.disconnect();
   }, []);
 
-  // Room 1 text visibility reset / fallback
+  // Room 1 text visibility entrance synchronized with video water ripple
   useEffect(() => {
     if (currentRoomIndex === 0) {
       const v = videoRefs.current[0];
-      if (v && v.currentTime >= 3.8) {
+      if (v && v.currentTime >= 1.6) {
         setRoom1TextVisible(true);
       }
       const fallbackTimer = setTimeout(() => {
         setRoom1TextVisible(true);
-      }, 4500);
+      }, 2200);
       return () => clearTimeout(fallbackTimer);
     } else {
       setRoom1TextVisible(false);
     }
   }, [currentRoomIndex]);
 
-  // Scroll & video control handler
+  // Scroll & video control handler with inertia protection
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
@@ -388,6 +442,8 @@ export function Act04Discovery({
           container.scrollTop = maxScroll;
         }
       });
+    } else {
+      container.scrollTop = 0;
     }
 
     const handleScroll = () => {
@@ -410,14 +466,14 @@ export function Act04Discovery({
     };
 
     const handleWheel = (e: WheelEvent) => {
-      if (!container || transitionFiredRef.current) return;
+      if (!container || transitionFiredRef.current || isScrollLockedRef.current) return;
       const { scrollTop, clientHeight, scrollHeight } = container;
       const maxScroll = scrollHeight - clientHeight;
 
-      if (scrollTop <= 0 && e.deltaY < -15) {
+      if (scrollTop <= 0 && e.deltaY < -25) {
         transitionFiredRef.current = true;
         onBack?.();
-      } else if (scrollTop >= maxScroll - 20 && e.deltaY > 15) {
+      } else if (scrollTop >= maxScroll - 20 && e.deltaY > 25) {
         transitionFiredRef.current = true;
         onComplete?.();
       }
@@ -428,7 +484,7 @@ export function Act04Discovery({
       startY = e.touches[0].clientY;
     };
     const handleTouchMove = (e: TouchEvent) => {
-      if (!container || transitionFiredRef.current) return;
+      if (!container || transitionFiredRef.current || isScrollLockedRef.current) return;
       const { scrollTop, clientHeight, scrollHeight } = container;
       const maxScroll = scrollHeight - clientHeight;
       const diffY = startY - e.touches[0].clientY;
@@ -466,7 +522,7 @@ export function Act04Discovery({
       {/* Interactive Ambient Gold Canvas */}
       <AmbientGoldCanvas />
 
-      {/* 4 Enormous Rooms — auto-advance on video end, no scroll hints, no CTAs. */}
+      {/* 4 Enormous Rooms — auto-advance on video end, smooth snapped sections. */}
       {ROOMS.map((room, idx) => (
         <section
           key={room.id}
@@ -485,8 +541,9 @@ export function Act04Discovery({
             autoPlay
             muted
             playsInline
+            preload="auto"
             onTimeUpdate={(e) => {
-              if (idx === 0 && e.currentTarget.currentTime >= 3.8) {
+              if (idx === 0 && e.currentTarget.currentTime >= 1.6) {
                 setRoom1TextVisible(true);
               }
             }}
